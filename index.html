@@ -63,6 +63,13 @@
             </span>
           </p>
         </section>
+        <a
+          id="browse-recipes"
+          class="browse-recipes"
+          href="#recipes"
+          data-i18n="浏览场景配方 ↓"
+          >浏览场景配方 ↓</a
+        >
         <section
           class="lab"
           aria-label="交互实验室"
@@ -366,6 +373,17 @@
                 暂停实验</button
               ><button id="reset" data-i18n="重新开始">重新开始</button>
             </div>
+            <div class="secondary-actions history-actions">
+              <button
+                id="undo"
+                data-i18n="撤销编辑"
+                data-i18n-title="恢复上次画笔或中心扰动前的完整状态并暂停"
+                title="恢复上次画笔或中心扰动前的完整状态并暂停"
+                disabled
+              >
+                撤销编辑</button
+              ><button id="redo" data-i18n="重做编辑" disabled>重做编辑</button>
+            </div>
             <div class="secondary-actions">
               <button id="step" data-i18n="单步">单步</button
               ><span class="record-action"
@@ -375,6 +393,7 @@
                 </button></span
               >
             </div>
+
             <div class="secondary-actions">
               <label class="export-size" for="export-width"
                 >PNG
@@ -409,6 +428,7 @@
               <p id="checkpoint-state" data-i18n="保存当前状态，稍后接着演化">
                 保存当前状态，稍后接着演化
               </p>
+
               <div class="secondary-actions">
                 <button id="checkpoint-save" data-i18n="保存快照">
                   保存快照</button
@@ -436,6 +456,12 @@
               高清 PNG
               保持模型比例、去除留边；输出像素增加，不提高模拟网格精度。
             </p>
+            <p
+              class="note"
+              data-i18n="画笔与中心扰动支持 8 步撤销；更换参数或场景会清空历史。"
+            >
+              画笔与中心扰动支持 8 步撤销；更换参数或场景会清空历史。
+            </p>
             <p class="note" id="keyboard-help">
               <span
                 class="i18n-fragment"
@@ -462,6 +488,33 @@
             </p>
             <p id="status" role="status" aria-live="polite"></p>
           </aside>
+        </section>
+        <section
+          id="recipes"
+          class="recipe-gallery"
+          aria-label="场景配方"
+          data-i18n-aria="场景配方"
+        >
+          <div class="recipe-heading">
+            <h2 data-i18n="从一个图案开始">从一个图案开始</h2>
+            <p
+              data-i18n="预览来自真实模型。按标注步数预演后，你可以继续改变它。"
+            >
+              预览来自真实模型。按标注步数预演后，你可以继续改变它。
+            </p>
+          </div>
+          <div id="recipe-list" class="recipe-list"></div>
+          <div id="recipe-status" class="recipe-status" hidden>
+            <span id="recipe-message" role="status"></span
+            ><progress
+              id="recipe-progress"
+              max="1"
+              value="0"
+              aria-label="场景准备进度"
+              data-i18n-aria="场景准备进度"
+            ></progress
+            ><button id="recipe-cancel" data-i18n="取消准备">取消准备</button>
+          </div>
         </section>
         <section class="explanation">
           <div>

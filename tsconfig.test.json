@@ -12,6 +12,9 @@
     "src/physarum.ts",
     "src/render.ts",
     "src/i18n.ts",
-    "src/offline.ts"
+    "src/offline.ts",
+    "src/history.ts",
+    "src/recipes.ts",
+    "src/prepare.ts"
   ]
 }

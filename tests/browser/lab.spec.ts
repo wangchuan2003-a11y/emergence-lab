@@ -342,3 +342,96 @@ test("an installed offline copy opens in a new page without a network", async ({
   expect(errors).toEqual([]);
   await context.setOffline(false);
 });
+
+test("editing history restores the numerical state and clears on parameter changes", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/#preset=coral");
+  await expect(page.locator("#undo")).toBeDisabled();
+  await page.locator("#pulse").click();
+  await page.locator("#step").click();
+  await expect(page.locator("#step-count")).toHaveText("248");
+  await page.locator("#undo").click();
+  await expect(page.locator("#step-count")).toHaveText("240");
+  await expect(page.locator("#state")).toHaveText("已暂停");
+  await page.locator("#redo").click();
+  await expect(page.locator("#step-count")).toHaveText("248");
+  await page.locator("#world").focus();
+  await page.keyboard.press("ControlOrMeta+z");
+  await expect(page.locator("#step-count")).toHaveText("240");
+  await page.locator("#feed").press("ArrowRight");
+  await expect(page.locator("#undo")).toBeDisabled();
+  await expect(page.locator("#redo")).toBeDisabled();
+});
+
+test("a recipe prepares the shown state without losing the paused preference", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/#preset=coral&lang=en");
+  await page.locator("#browse-recipes").click();
+  await expect(page).toHaveURL(/preset=coral&lang=en/);
+  await page.locator('[data-recipe="silver-branches"]').click();
+  await expect(page.locator("#recipe-status")).toBeHidden({ timeout: 20000 });
+  await expect(page.locator("#scene-title")).toHaveText("Trails that remember");
+  await expect(page.locator("#step-count")).toHaveText("600");
+  await expect(page.locator("#state")).toHaveText("Paused");
+  await expect(page.locator("#palette")).toHaveValue("mono");
+  await expect(page.locator("#sensor-distance")).toHaveValue("18");
+  expect(errors).toEqual([]);
+});
+
+test("cancelled preparation leaves the previous experiment intact", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    window.requestAnimationFrame = (callback) =>
+      window.setTimeout(() => callback(performance.now()), 50);
+  });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/#preset=coral");
+  await page.locator('[data-recipe="fluorescent-maze"]').click();
+  await page.locator("#recipe-cancel").click();
+  await expect(page.locator("#recipe-status")).toBeHidden();
+  await page.waitForTimeout(200);
+  await expect(page.locator("#scene-title")).toHaveText("让一片珊瑚生长");
+  await expect(page.locator("#step-count")).toHaveText("240");
+  await expect(page.locator("#status")).toHaveText(
+    "已取消准备，原实验保持不变。",
+  );
+});
+
+test("single stepping preserves a pending particle disturbance", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/#preset=flock&count=100");
+  await page.locator("#pulse").click();
+  await page.locator(".checkpoint-panel summary").click();
+  const { readFile } = await import("node:fs/promises");
+  const first = page.waitForEvent("download");
+  await page.locator("#checkpoint-save").click();
+  const before = JSON.parse(
+    await readFile((await (await first).path())!, "utf8"),
+  );
+  await page.locator("#step").click();
+  const second = page.waitForEvent("download");
+  await page.locator("#checkpoint-save").click();
+  const after = JSON.parse(
+    await readFile((await (await second).path())!, "utf8"),
+  );
+  const { Simulation } = await import("../../.test-build/engine.js");
+  const reference = new Simulation(before.settings);
+  for (const key of ["x", "y", "vx", "vy"]) reference[key].set(before[key]);
+  reference.time = before.time;
+  reference.step({ x: 600, y: 380, repel: true });
+  expect(after.time).toBe(reference.time);
+  expect(
+    Math.max(
+      ...after.vx.map((v: number, i: number) => Math.abs(v - reference.vx[i])),
+    ),
+  ).toBeLessThan(0.00002);
+});

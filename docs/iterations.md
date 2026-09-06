@@ -42,4 +42,12 @@ Production builds now emit a content-versioned service worker. It precaches only
 
 Generated a 45-frame, 512×160 looping GIF directly from reaction and network arrays for the GitHub README. The optional generator uses ffmpeg; normal builds/runtime remain dependency-free beyond the existing web toolchain.
 
-Verification so far: 79 Node tests and build passed; GIF stream metadata confirms 45 frames at the intended size. Production-browser offline reopening is included in CI for desktop and mobile. Deployment pending.
+Verification so far: 79 Node tests and build passed; GIF stream metadata confirms 45 frames at the intended size. Production-browser offline reopening is included in CI for desktop and mobile. First browser run found an Origin/Vary cache mismatch: HTML reopened offline but script requests missed their cached entries. The exact-static-resource match now ignores transport Vary headers; regression test and production-browser rerun passed in 34049449770. Published fix f421227 follows 91337a8.
+
+## 2026-09-07 · Reversible edits and prepared scene recipes
+
+Added an eight-entry undo/redo history for brush strokes and center disturbances. Restoring an edit returns the complete model to its earlier numerical state and pauses; changing settings/scenes/importing clears the edit history. Undo shortcuts are limited to focused-canvas Ctrl/Cmd+Z and Shift+Z/Y. Single stepping now follows the same pending-disturbance path as automatic stepping.
+
+Three real model-derived recipes are available: fluorescent maze at 1200 steps, amber spots at 800, and silver branches at 600. Their image assets and metadata are generated from the same parameters. Loading uses bounded model batches with event-loop yields; it prepares a separate state, supports cancellation/latest-request wins, preserves the prior play/pause preference, and only replaces the live model when complete.
+
+Added a static element-binding contract after it caught a missing recipe-navigation control during development. Numerical/history/recipe/DOM tests and browser flow checks cover this iteration; full release status pending.

@@ -1102,3 +1102,138 @@ aside {
     max-width: 16ch;
   }
 }
+.browse-recipes {
+  display: inline-block;
+  margin: -13px 0 22px;
+  font-size: 12px;
+  color: #abcdbd;
+  text-underline-offset: 4px;
+}
+.browse-recipes:hover {
+  text-decoration: underline;
+}
+.recipe-gallery {
+  padding: 54px 0 8px;
+  scroll-margin-top: 20px;
+}
+.recipe-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 32px;
+  margin-bottom: 24px;
+}
+.recipe-heading h2 {
+  font-size: 28px;
+  font-weight: 550;
+  letter-spacing: -0.025em;
+  margin: 0;
+}
+.recipe-heading p {
+  max-width: 58ch;
+  font-size: 12px;
+  line-height: 1.8;
+  color: #a0b7b3;
+  margin: 0;
+}
+.recipe-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+.recipe-card {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  padding: 0 0 18px;
+  background: #111d25;
+  color: #dbece3;
+  border: 1px solid #294239;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.recipe-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 8/5;
+  object-fit: cover;
+}
+.recipe-card strong {
+  font-size: 17px;
+  font-weight: 550;
+  padding: 18px 18px 4px;
+}
+.recipe-step {
+  font:
+    10px "Lab Mono",
+    monospace;
+  color: #a3cabb;
+  padding: 0 18px;
+}
+.recipe-description {
+  font-size: 12px;
+  line-height: 1.7;
+  color: #a1b8b2;
+  padding: 12px 18px 0;
+}
+.recipe-card:hover {
+  border-color: #8ec7aa;
+  filter: none;
+}
+.recipe-card[aria-busy="true"] {
+  border-color: #c3e6ac;
+}
+.recipe-status {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 20px;
+  padding: 15px 0;
+  color: #cae3d4;
+  font-size: 12px;
+}
+.recipe-status progress {
+  flex: 1;
+  accent-color: #a7e8c9;
+}
+.recipe-status button {
+  border: 1px solid #45665d;
+  border-radius: 6px;
+  color: #c7e4d6;
+  background: #172c30;
+  padding: 8px 12px;
+  font-size: 12px;
+}
+@media (max-width: 720px) {
+  .recipe-gallery {
+    padding-top: 36px;
+  }
+  .recipe-heading {
+    display: block;
+  }
+  .recipe-heading h2 {
+    font-size: 25px;
+    margin-bottom: 12px;
+  }
+  .recipe-list {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 14px;
+    padding-bottom: 8px;
+  }
+  .recipe-card {
+    flex: 0 0 87%;
+    scroll-snap-align: start;
+  }
+  .recipe-status {
+    flex-wrap: wrap;
+  }
+  .recipe-status > span {
+    flex-basis: 100%;
+  }
+  .recipe-status progress {
+    min-width: 100px;
+  }
+}

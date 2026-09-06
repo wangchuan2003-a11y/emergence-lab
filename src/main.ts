@@ -1,4 +1,7 @@
 import "./style.css";
+import { recipes, getRecipe, type Recipe } from "./recipes";
+import { prepareRecipe } from "./prepare";
+import { EditHistory } from "./history";
 import { registerOffline } from "./offline";
 import { translate, applyTranslations, type Language } from "./i18n";
 import {
@@ -37,6 +40,7 @@ let language: Language =
   new URLSearchParams(location.hash.slice(1)).get("lang") === "en"
     ? "en"
     : "zh";
+const editHistory = new EditHistory(8);
 const renderer = createRenderer();
 let view: View = { scale: 0, x: 0, y: 0, width: 0, height: 0 };
 let settings = parseSettings(location.hash),
@@ -54,6 +58,9 @@ let brushErase = false,
   lastPaint: { x: number; y: number } | undefined;
 let offlineReady = false;
 let importRequest = 0;
+let preparingRequest: number | null = null,
+  preparingRecipe: Recipe | undefined;
+const recipeButtons = new Map<string, HTMLButtonElement>();
 let importedSnapshot = false,
   showAgents = true;
 let pendingResize = false,
@@ -87,6 +94,8 @@ const capture = createCaptureController(canvas, {
     $<HTMLButtonElement>("record").disabled = state === "stopping";
     $("record-progress").textContent =
       state === "recording" ? `${secondsLeft}s` : "";
+    syncHistory();
+    syncPreparation();
     if (state === "idle") {
       if (pendingHash) {
         pendingHash = false;
@@ -115,6 +124,7 @@ function tr(text: string, values: Record<string, string | number> = {}) {
 function applyLanguage() {
   document.documentElement.lang = language === "en" ? "en" : "zh-CN";
   applyTranslations(document, language);
+  renderRecipes();
   $("language-toggle").textContent = language === "en" ? "中文" : "EN";
   $("language-toggle").setAttribute(
     "aria-label",
@@ -218,7 +228,151 @@ function draw(clear = false) {
   renderer.paint(ctx, renderSource(), palette, clear);
   $("step-count").textContent = String(currentTime());
 }
+function recipeName(recipe: Recipe) {
+  return language === "en" ? recipe.titleEn : recipe.titleZh;
+}
+function renderRecipes() {
+  const container = $("recipe-list");
+  for (const recipe of recipes) {
+    let button = recipeButtons.get(recipe.id);
+    if (!button) {
+      button = document.createElement("button");
+      button.type = "button";
+      button.className = "recipe-card";
+      button.dataset.recipe = recipe.id;
+      const image = document.createElement("img");
+      image.src = recipe.preview;
+      image.alt = "";
+      image.loading = "lazy";
+      image.width = 512;
+      image.height = 320;
+      const title = document.createElement("strong");
+      title.className = "recipe-title";
+      const step = document.createElement("span");
+      step.className = "recipe-step";
+      const description = document.createElement("span");
+      description.className = "recipe-description";
+      button.append(image, title, step, description);
+      button.onclick = () => {
+        void selectRecipe(recipe.id);
+      };
+      container.append(button);
+      recipeButtons.set(recipe.id, button);
+    }
+    button.querySelector(".recipe-title")!.textContent = recipeName(recipe);
+    button.querySelector(".recipe-step")!.textContent = tr("预演 {step} 步", {
+      step: recipe.steps,
+    });
+    button.querySelector(".recipe-description")!.textContent =
+      language === "en" ? recipe.descriptionEn : recipe.descriptionZh;
+  }
+}
+function syncPreparation() {
+  const pending = preparingRequest !== null;
+  $("recipe-status").hidden = !pending;
+  if (preparingRecipe)
+    $("recipe-message").textContent = tr("正在准备 {name}…", {
+      name: recipeName(preparingRecipe),
+    });
+  $<HTMLButtonElement>("record").disabled =
+    pending || capture.state === "stopping";
+  $<HTMLButtonElement>("save").disabled = pending;
+  $<HTMLButtonElement>("checkpoint-save").disabled = pending;
+  for (const [id, button] of recipeButtons) {
+    button.disabled = capture.state !== "idle";
+    button.setAttribute(
+      "aria-busy",
+      String(pending && preparingRecipe?.id === id),
+    );
+  }
+}
+async function selectRecipe(id: string) {
+  const recipe = getRecipe(id);
+  if (!recipe || capture.state !== "idle") return;
+  const request = ++importRequest;
+  preparingRequest = request;
+  preparingRecipe = recipe;
+  $<HTMLProgressElement>("recipe-progress").max = recipe.steps;
+  $<HTMLProgressElement>("recipe-progress").value = 0;
+  sync();
+  try {
+    const prepared = await prepareRecipe(recipe, {
+      cancelled: () => request !== importRequest,
+      yieldControl: () =>
+        new Promise<void>((resolve) => requestAnimationFrame(() => resolve())),
+      onProgress: (completed) => {
+        if (preparingRequest === request)
+          $<HTMLProgressElement>("recipe-progress").value = completed;
+      },
+    });
+    if (!prepared || request !== importRequest) return;
+    const wasPaused = paused;
+    restoreCheckpoint(prepared);
+    paused = wasPaused;
+    importedSnapshot = false;
+    forgetEdits();
+    preparingRequest = null;
+    preparingRecipe = undefined;
+    sync();
+    report(
+      tr("已载入 {name}，从第 {step} 步继续。", {
+        name: recipeName(recipe),
+        step: prepared.time,
+      }),
+    );
+    canvas.focus({ preventScroll: true });
+    document
+      .querySelector(".stage")!
+      .scrollIntoView({
+        block: "start",
+        behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+      });
+  } catch (error) {
+    if (request === importRequest) report(tr("场景准备失败，请重试。"));
+    console.error(error);
+  } finally {
+    if (preparingRequest === request) {
+      preparingRequest = null;
+      preparingRecipe = undefined;
+      sync();
+    }
+  }
+}
+$("recipe-cancel").onclick = () => {
+  importRequest++;
+  preparingRequest = null;
+  preparingRecipe = undefined;
+  sync();
+  report("已取消准备，原实验保持不变。");
+};
+$("browse-recipes").onclick = (event) => {
+  event.preventDefault();
+  $("recipes").scrollIntoView({
+    block: "start",
+    behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
+      ? "auto"
+      : "smooth",
+  });
+};
+function syncHistory() {
+  $<HTMLButtonElement>("undo").disabled =
+    !editHistory.canUndo || capture.state !== "idle";
+  $<HTMLButtonElement>("redo").disabled =
+    !editHistory.canRedo || capture.state !== "idle";
+}
+function forgetEdits() {
+  editHistory.clear();
+  syncHistory();
+}
+function rememberEdit() {
+  editHistory.remember(checkpoint());
+  syncHistory();
+}
 function sync() {
+  syncHistory();
+  syncPreparation();
   for (const key of ["count", "speed", "cohesion", "separation"] as const) {
     $<HTMLInputElement>(key).value = String(settings[key]);
     $(key + "-value").textContent = String(settings[key]);
@@ -236,7 +390,9 @@ function sync() {
   $("scene-caption").textContent = tr(scenes[settings.preset][1]);
   $("pause").textContent = tr(paused ? "继续实验" : "暂停实验");
   $("stage-pause").textContent = tr(paused ? "继续" : "暂停");
-  $("state").textContent = tr(paused ? "已暂停" : "运行中");
+  $("state").textContent = tr(
+    preparingRequest !== null ? "正在准备" : paused ? "已暂停" : "运行中",
+  );
   if (paused) $("fps").textContent = "PAUSED";
   document.querySelector(".live")?.classList.toggle("paused", paused);
   canvas.classList.toggle("drawing-enabled", isFieldMode());
@@ -280,6 +436,7 @@ function sync() {
 }
 function reset() {
   importRequest++;
+  forgetEdits();
   importedSnapshot = false;
   sim = new Simulation(settings);
   bio = isBio()
@@ -296,6 +453,7 @@ function reset() {
 for (const key of ["count", "speed", "cohesion", "separation"] as const)
   $(key).addEventListener("input", () => {
     importRequest++;
+    forgetEdits();
     settings[key] = Number($<HTMLInputElement>(key).value);
     if (key === "count") reset();
     else sync();
@@ -303,6 +461,7 @@ for (const key of ["count", "speed", "cohesion", "separation"] as const)
 for (const [id, key] of Object.entries(networkKeys))
   $(id).addEventListener("input", () => {
     importRequest++;
+    forgetEdits();
     networkSettings[key] = Number($<HTMLInputElement>(id).value);
     if (key === "count") reset();
     else {
@@ -313,6 +472,7 @@ for (const [id, key] of Object.entries(networkKeys))
 for (const key of ["feed", "kill", "rate"])
   $(key).addEventListener("input", () => {
     importRequest++;
+    forgetEdits();
     const v = Number($<HTMLInputElement>(key).value);
     if (key === "feed") feed = v;
     else if (key === "kill") kill = v;
@@ -358,6 +518,7 @@ $("seed").addEventListener("change", () => {
 });
 $("pulse").onclick = () => {
   importRequest++;
+  rememberEdit();
   const field = bio ?? network;
   if (field) {
     field.inject(128, 80, brushErase, brushRadius);
@@ -375,22 +536,31 @@ $("pulse").onclick = () => {
     }
   }
 };
+function stepSimulation() {
+  if (bio) bio.step(feed, kill, bioSpeed);
+  else if (network) network.step();
+  else
+    sim.step(
+      pointer ??
+        (sim.time < pulseUntil ? { x: 600, y: 380, repel: true } : undefined),
+    );
+}
 $("step").onclick = () => {
   importRequest++;
   paused = true;
-  if (bio) bio.step(feed, kill, bioSpeed);
-  else if (network) network.step();
-  else sim.step();
+  stepSimulation();
   draw();
   sync();
 };
 $("show-agents").onchange = () => {
   importRequest++;
+  forgetEdits();
   showAgents = $<HTMLInputElement>("show-agents").checked;
   draw(true);
 };
 $("palette").onchange = () => {
   importRequest++;
+  forgetEdits();
   palette = $<HTMLSelectElement>("palette").value as typeof palette;
   draw(true);
 };
@@ -443,6 +613,7 @@ $("save").onclick = () => {
   });
 };
 $("record").onclick = () => {
+  if (preparingRequest !== null) return;
   importRequest++;
   if (capture.state === "recording") capture.stop();
   else if (capture.state === "idle")
@@ -491,6 +662,76 @@ function checkpoint(): Snapshot {
         vy: Array.from(sim.vy),
       };
 }
+function restoreCheckpoint(restored: Snapshot) {
+  // Prepare all arrays before replacing the current model.
+  const nextSim = new Simulation(restored.settings);
+  let nextBio: ReactionDiffusion | null = null;
+  let nextNetwork: Physarum | null = null;
+  if (restored.kind === "reaction") {
+    nextBio = new ReactionDiffusion(
+      restored.settings.preset as BioPreset,
+      restored.settings.seed,
+    );
+    nextBio.a.set(restored.a);
+    nextBio.b.set(restored.b);
+    nextBio.time = restored.time;
+  } else if (restored.kind === "network") {
+    nextNetwork = new Physarum(restored.settings.seed, restored.network);
+    nextNetwork.x.set(restored.x);
+    nextNetwork.y.set(restored.y);
+    nextNetwork.heading.set(restored.heading);
+    nextNetwork.field.set(restored.field);
+    nextNetwork.time = restored.time;
+  } else {
+    nextSim.x.set(restored.x);
+    nextSim.y.set(restored.y);
+    nextSim.vx.set(restored.vx);
+    nextSim.vy.set(restored.vy);
+    nextSim.time = restored.time;
+  }
+  if (capture.state !== "idle")
+    throw new Error("正在录制，请保存录像后再打开快照。");
+  settings = restored.settings;
+  sim = nextSim;
+  bio = nextBio;
+  network = nextNetwork;
+  if (restored.kind === "network") {
+    networkSettings = { ...restored.network };
+    showAgents = restored.showAgents;
+  }
+  palette = restored.palette;
+  if (restored.kind === "reaction") {
+    feed = restored.feed;
+    kill = restored.kill;
+    bioSpeed = restored.rate;
+  }
+  pulseUntil =
+    sim.time + (restored.kind === "particles" ? restored.pulseRemaining : 0);
+  pointer = undefined;
+  lastPaint = undefined;
+  paused = true;
+
+  resize();
+  sync();
+}
+$("undo").onclick = () => {
+  if (capture.state !== "idle") return;
+  importRequest++;
+  const restored = editHistory.undo(checkpoint());
+  if (restored) {
+    restoreCheckpoint(restored);
+    report("已撤销并回到编辑前的状态。");
+  }
+};
+$("redo").onclick = () => {
+  if (capture.state !== "idle") return;
+  importRequest++;
+  const restored = editHistory.redo(checkpoint());
+  if (restored) {
+    restoreCheckpoint(restored);
+    report("已重做编辑，实验保持暂停。");
+  }
+};
 $("checkpoint-save").onclick = () => {
   try {
     const text = encodeSnapshot(checkpoint());
@@ -519,53 +760,8 @@ $("checkpoint-file").addEventListener("change", async () => {
     const text = await file.text();
     if (request !== importRequest) return;
     const restored = decodeSnapshot(text);
-    // Build a replacement model completely before touching the running state.
-    const nextSim = new Simulation(restored.settings);
-    let nextBio: ReactionDiffusion | null = null;
-    let nextNetwork: Physarum | null = null;
-    if (restored.kind === "reaction") {
-      nextBio = new ReactionDiffusion(
-        restored.settings.preset as BioPreset,
-        restored.settings.seed,
-      );
-      nextBio.a.set(restored.a);
-      nextBio.b.set(restored.b);
-      nextBio.time = restored.time;
-    } else if (restored.kind === "network") {
-      nextNetwork = new Physarum(restored.settings.seed, restored.network);
-      nextNetwork.x.set(restored.x);
-      nextNetwork.y.set(restored.y);
-      nextNetwork.heading.set(restored.heading);
-      nextNetwork.field.set(restored.field);
-      nextNetwork.time = restored.time;
-    } else {
-      nextSim.x.set(restored.x);
-      nextSim.y.set(restored.y);
-      nextSim.vx.set(restored.vx);
-      nextSim.vy.set(restored.vy);
-      nextSim.time = restored.time;
-    }
-    if (capture.state !== "idle")
-      throw new Error("正在录制，请保存录像后再打开快照。");
-    settings = restored.settings;
-    sim = nextSim;
-    bio = nextBio;
-    network = nextNetwork;
-    if (restored.kind === "network") {
-      networkSettings = { ...restored.network };
-      showAgents = restored.showAgents;
-    }
-    palette = restored.palette;
-    if (restored.kind === "reaction") {
-      feed = restored.feed;
-      kill = restored.kill;
-      bioSpeed = restored.rate;
-    }
-    pulseUntil =
-      sim.time + (restored.kind === "particles" ? restored.pulseRemaining : 0);
-    pointer = undefined;
-    lastPaint = undefined;
-    paused = true;
+    restoreCheckpoint(restored);
+    forgetEdits();
     importedSnapshot = true;
     const cleanUrl = new URL(location.href);
     cleanUrl.hash = language === "en" ? "lang=en" : "";
@@ -680,7 +876,16 @@ function updatePointer(e: PointerEvent) {
 canvas.addEventListener("pointermove", updatePointer);
 canvas.addEventListener("pointerdown", (e) => {
   lastPaint = undefined;
-  if (isFieldMode()) canvas.setPointerCapture(e.pointerId);
+  if (isFieldMode()) {
+    const rect = canvas.getBoundingClientRect();
+    const point = pointToDomain(
+      view,
+      ((e.clientX - rect.left) * canvas.width) / rect.width,
+      ((e.clientY - rect.top) * canvas.height) / rect.height,
+    );
+    if (point.inside) rememberEdit();
+    canvas.setPointerCapture(e.pointerId);
+  }
   updatePointer(e);
 });
 canvas.addEventListener("pointerup", (e) => {
@@ -700,6 +905,15 @@ canvas.addEventListener("pointercancel", () => {
 });
 document.addEventListener("keydown", (e) => {
   if (document.activeElement !== canvas) return;
+  if (
+    (e.ctrlKey || e.metaKey) &&
+    !e.altKey &&
+    (e.code === "KeyZ" || e.code === "KeyY")
+  ) {
+    e.preventDefault();
+    $(e.shiftKey || e.code === "KeyY" ? "redo" : "undo").click();
+    return;
+  }
   const target = e.target as HTMLElement;
   if (
     target.closest("input,select,textarea,button,summary,a") ||
@@ -745,20 +959,12 @@ function frame(now: number) {
   try {
     const elapsed = Math.min(now - last, 100);
     last = now;
-    if (!paused && !document.hidden) {
+    if (!paused && !document.hidden && preparingRequest === null) {
       acc += elapsed;
       let steps = 0;
       const cap = isFieldMode() ? 2 : 5;
       while (acc >= 1000 / 60 && steps < cap) {
-        if (bio) bio.step(feed, kill, bioSpeed);
-        else if (network) network.step();
-        else
-          sim.step(
-            pointer ??
-              (sim.time < pulseUntil
-                ? { x: 600, y: 380, repel: true }
-                : undefined),
-          );
+        stepSimulation();
         acc -= 1000 / 60;
         steps++;
       }
@@ -767,9 +973,12 @@ function frame(now: number) {
       frames++;
     } else acc = 0;
     if (now - fpsStart >= 1000) {
-      $("fps").textContent = paused
-        ? "PAUSED"
-        : `${Math.round((frames * 1000) / (now - fpsStart))} FPS`;
+      $("fps").textContent =
+        preparingRequest !== null
+          ? "PREPARING"
+          : paused
+            ? "PAUSED"
+            : `${Math.round((frames * 1000) / (now - fpsStart))} FPS`;
       frames = 0;
       fpsStart = now;
     }

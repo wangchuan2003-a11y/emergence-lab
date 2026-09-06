@@ -2,6 +2,29 @@ export type Language = "zh" | "en";
 
 // Keep the Chinese source in data attributes so switching languages is reversible.
 export const translations: Record<string, string> = {
+  场景配方: "Scene recipes",
+  从一个图案开始: "Start from a pattern",
+  "预览来自真实模型。按标注步数预演后，你可以继续改变它。":
+    "Previews come from the actual models. Prepare the shown number of steps, then make the pattern your own.",
+  场景准备进度: "Scene preparation progress",
+  取消准备: "Cancel preparation",
+  "浏览场景配方 ↓": "Explore scene recipes ↓",
+  "预演 {step} 步": "Prepared at step {step}",
+  "正在准备 {name}…": "Preparing {name}…",
+  正在准备: "Preparing",
+  "已载入 {name}，从第 {step} 步继续。":
+    "Loaded {name} at step {step}. Continue exploring.",
+  "场景准备失败，请重试。": "Scene preparation failed. Please try again.",
+  "已取消准备，原实验保持不变。":
+    "Preparation cancelled. Your original experiment is unchanged.",
+  撤销编辑: "Undo edit",
+  重做编辑: "Redo edit",
+  恢复上次画笔或中心扰动前的完整状态并暂停:
+    "Restore the full state before the last brush stroke or center pulse, then pause",
+  "已撤销并回到编辑前的状态。": "Undone. Restored the state before the edit.",
+  "已重做编辑，实验保持暂停。": "Edit restored. The simulation remains paused.",
+  "画笔与中心扰动支持 8 步撤销；更换参数或场景会清空历史。":
+    "Undo up to 8 brush strokes or center pulses. Changing settings or scenes clears this history.",
   浏览器本地计算: "Runs in your browser",
   离线副本已就绪: "Offline copy ready",
   "改变简单规则，亲手创造复杂秩序。一个开源、可复现的交互式粒子涌现实验室。":
