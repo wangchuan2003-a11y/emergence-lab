@@ -1,4 +1,5 @@
 import type { Settings } from "./engine.js";
+import type { NetworkSettings } from "./physarum.js";
 
 export type Palette = "lagoon" | "ember" | "mono";
 interface CommonSnapshot {
@@ -26,9 +27,19 @@ export interface ReactionSnapshot extends CommonSnapshot {
   a: number[];
   b: number[];
 }
-export type Snapshot = ParticleSnapshot | ReactionSnapshot;
+export interface NetworkSnapshot extends CommonSnapshot {
+  kind: "network";
+  width: 256;
+  height: 160;
+  network: NetworkSettings;
+  x: number[];
+  y: number[];
+  heading: number[];
+  field: number[];
+}
+export type Snapshot = ParticleSnapshot | ReactionSnapshot | NetworkSnapshot;
 export const MAX_SNAPSHOT_BYTES = 3_000_000;
-const presets = ["flock", "orbit", "swarm", "coral", "cells"];
+const presets = ["flock", "orbit", "swarm", "coral", "cells", "physarum"];
 function object(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -104,6 +115,47 @@ export function decodeSnapshot(text: string): Snapshot {
     palette: input.palette as Palette,
     time: input.time,
   };
+  if (input.kind === "network") {
+    const n = input.network;
+    if (
+      common.settings.preset !== "physarum" ||
+      input.width !== 256 ||
+      input.height !== 160 ||
+      !object(n) ||
+      !number(n.count, 500, 10000, true) ||
+      !number(n.sensorDistance, 2, 24) ||
+      !number(n.sensorAngle, 10, 90) ||
+      !number(n.turnAngle, 10, 90) ||
+      !number(n.retention, 0.85, 0.999)
+    )
+      throw new Error("网络参数或尺寸无效。");
+    if (
+      !array(input.x, n.count, 0, 256) ||
+      !array(input.y, n.count, 0, 160) ||
+      input.x.some((v) => v >= 256) ||
+      input.y.some((v) => v >= 160) ||
+      !array(input.heading, n.count, 0, Math.fround(Math.PI * 2)) ||
+      !array(input.field, 40960, 0, 3.4028234663852886e38)
+    )
+      throw new Error("网络浓度或粒子数据损坏。");
+    return {
+      ...common,
+      kind: "network",
+      width: 256,
+      height: 160,
+      network: {
+        count: n.count,
+        sensorDistance: n.sensorDistance,
+        sensorAngle: n.sensorAngle,
+        turnAngle: n.turnAngle,
+        retention: n.retention,
+      },
+      x: input.x,
+      y: input.y,
+      heading: input.heading,
+      field: input.field,
+    };
+  }
   if (input.kind === "reaction") {
     if (
       !["coral", "cells"].includes(common.settings.preset) ||

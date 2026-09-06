@@ -94,3 +94,38 @@ test("unknown fields are stripped rather than retained as application state", ()
   const parsed = decodeSnapshot(JSON.stringify({ ...base, extra: "ignored" }));
   assert.equal(parsed.extra, undefined);
 });
+
+test("network snapshot preserves agent headings and trail feedback", async () => {
+  const { Physarum, networkDefaults } =
+    await import("../.test-build/physarum.js");
+  const network = new Physarum(42, { ...networkDefaults, count: 500 });
+  network.step(25);
+  network.inject(30, 40);
+  const state = {
+    format: "emergence-lab",
+    version: 1,
+    kind: "network",
+    settings: { ...defaults, preset: "physarum" },
+    palette: "lagoon",
+    time: network.time,
+    width: 256,
+    height: 160,
+    network: { ...network.settings },
+    x: Array.from(network.x),
+    y: Array.from(network.y),
+    heading: Array.from(network.heading),
+    field: Array.from(network.field),
+  };
+  const saved = decodeSnapshot(encodeSnapshot(state));
+  const resumed = new Physarum(saved.settings.seed, saved.network);
+  for (const key of ["x", "y", "heading", "field"])
+    resumed[key].set(saved[key]);
+  resumed.time = saved.time;
+  network.step(20);
+  resumed.step(20);
+  assert.deepEqual(resumed.field, network.field);
+  assert.deepEqual(resumed.heading, network.heading);
+  const broken = structuredClone(state);
+  broken.field[0] = -1;
+  assert.throws(() => encodeSnapshot(broken));
+});

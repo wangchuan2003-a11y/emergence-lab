@@ -57,6 +57,7 @@
             </div>
             <div class="stage-bottom">
               <span id="pointer-hint">移动吸引 · 按住排斥</span
+              ><button id="stage-pause" aria-label="暂停或继续实验">暂停</button
               ><button id="pulse">中心扰动</button
               ><button id="fullscreen">全屏</button>
             </div>
@@ -68,6 +69,9 @@
             </div>
             <fieldset class="presets">
               <legend>选择一个世界</legend>
+              <button data-preset="physarum" aria-pressed="false">
+                黏菌网络 <small>Physarum</small>
+              </button>
               <button data-preset="coral" aria-pressed="false">
                 <span>04</span>珊瑚生长 <small>Coral</small></button
               ><button data-preset="cells" aria-pressed="false">
@@ -151,7 +155,7 @@
                 step="1"
                 value="8"
               />
-              <fieldset class="brush-tools">
+              <fieldset class="brush-tools" id="brush-controls">
                 <legend>画笔</legend>
                 <button type="button" data-brush="seed" aria-pressed="true">
                   播种</button
@@ -171,6 +175,68 @@
               <p class="model-note">
                 Gray–Scott 化学模式。不是生物细胞。<br />初始状态预生长 240
                 步；参数可能使图案消失。
+              </p>
+            </div>
+            <div class="sliders" id="network-controls" hidden>
+              <label for="network-count"
+                >粒子密度 <output id="network-count-value">4000</output></label
+              ><input
+                id="network-count"
+                type="range"
+                min="500"
+                max="10000"
+                step="500"
+                value="4000"
+              />
+              <label for="sensor-distance"
+                >感知距离 <output id="sensor-distance-value">9</output></label
+              ><input
+                id="sensor-distance"
+                type="range"
+                min="2"
+                max="24"
+                step="1"
+                value="9"
+              />
+              <label for="sensor-angle"
+                >感知夹角 <output id="sensor-angle-value">45°</output></label
+              ><input
+                id="sensor-angle"
+                type="range"
+                min="10"
+                max="90"
+                step="1"
+                value="45"
+              />
+              <label for="turn-angle"
+                >转向幅度 <output id="turn-angle-value">45°</output></label
+              ><input
+                id="turn-angle"
+                type="range"
+                min="10"
+                max="90"
+                step="1"
+                value="45"
+              />
+              <label for="retention"
+                >轨迹保留率 <output id="retention-value">0.950</output></label
+              ><input
+                id="retention"
+                type="range"
+                min="0.85"
+                max="0.999"
+                step="0.001"
+                value="0.95"
+              />
+              <label class="toggle-option"
+                ><input
+                  id="show-agents"
+                  type="checkbox"
+                  checked
+                />显示真实粒子位置</label
+              >
+              <p class="model-note">
+                粒子读取浓度、留下轨迹，轨迹再引导粒子。<br />周期边界的工程模型；不表示真实黏菌或最短路径。
               </p>
             </div>
             <div class="palette-row">
@@ -253,7 +319,8 @@
             <h3>参考可追溯，结果可探索。</h3>
             <p>
               反应扩散参照 Karl Sims 的 Gray–Scott 教程；鸟群参照 Craig Reynolds
-              的 Boids。这里是探索性模型与艺术表达，不用于预测真实生物过程。
+              的
+              Boids。黏菌网络参考趋化研究的局部反馈思路。这里是探索性模型与艺术表达，不用于预测真实生物过程。
             </p>
             <a
               href="https://www.karlsims.com/rd.html"

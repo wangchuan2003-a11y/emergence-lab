@@ -948,3 +948,50 @@ aside {
 .record-action button {
   white-space: nowrap;
 }
+.presets button[data-preset="swarm"] {
+  grid-column: auto;
+}
+#stage-pause {
+  color: #c9f1dc;
+}
+@media (min-width: 721px) {
+  .lab {
+    height: 800px;
+    min-height: 0;
+  }
+  .stage {
+    min-height: 0;
+  }
+  aside {
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #45665d #111d25;
+  }
+}
+@media (max-width: 720px) {
+  .stage-bottom {
+    gap: 10px;
+    padding: 10px 12px;
+  }
+  .stage-bottom #pointer-hint {
+    max-width: 120px;
+    font-size: 9px;
+    line-height: 1.4;
+  }
+  .stage-bottom button {
+    font-size: 11px;
+    white-space: nowrap;
+  }
+}
+.sliders .toggle-option {
+  justify-content: flex-start;
+  align-items: center;
+  gap: 9px;
+  font-size: 11px;
+  margin: 18px 0 12px;
+}
+.toggle-option input {
+  accent-color: #a7e8c9;
+  width: 15px;
+  height: 15px;
+}

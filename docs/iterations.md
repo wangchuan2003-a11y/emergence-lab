@@ -10,6 +10,14 @@ Purpose: preserve an interesting evolved field and resume it, improve touch/keyb
 - Audited numerical APIs and found small-grid duplicate-neighbor updates and invalid-input hangs. Narrow fixes and independent regression tests are being integrated.
 - Added skip navigation, canvas keyboard shortcuts and disabled live announcements for the fast-changing numerical step counter.
 
-Verification status will be recorded after this iteration passes the full checks and is deployed. No claim about biological validity is implied.
+Verified and deployed: commit dfaa937; GitHub Actions run 34044542251 passed build, 43 core tests and 12 browser cases. The published checkpoint entry was opened and the browser reported no console errors. No claim about biological validity is implied.
 
 Next prioritized investigation: Physarum-inspired trail networks, based on the source and uncertainty report in research-next.md. GPU migration remains conditional on measured bottlenecks.
+
+## 2026-09-07 · Trail networks
+
+Added a sixth mode with three-sensor chemotaxis and diffusing/decaying trail feedback. Controls cover density, sensor geometry, turn amplitude and retention. Agent locations can be shown over the field. The network participates in parameter links, pause/single-step, painting, recording and full JSON checkpoints, including public heading/field arrays and numerical time.
+
+Default-pattern review rejected a collapse-to-single-band prototype. A disclosed saturating sensor response and stateless split rule now produce the actual network comparison captured in physarum-evolution.png. This remains an independent engineering model rather than a precise Jones (2010) reproduction.
+
+Core validation: 61 tests passed locally, including steering, independent stencil/quantity checks, seeded continuation and imported network checkpoints. Browser and deployment results pending this iteration's CI.

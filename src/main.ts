@@ -1,4 +1,5 @@
 import "./style.css";
+import { Physarum, networkDefaults, type NetworkSettings } from "./physarum";
 import { createCaptureController } from "./capture";
 import {
   decodeSnapshot,
@@ -12,6 +13,16 @@ const $ = <T extends HTMLElement>(id: string) =>
   document.getElementById(id) as T;
 const canvas = $<HTMLCanvasElement>("world"),
   ctx = canvas.getContext("2d")!;
+let network: Physarum | null = null,
+  networkSettings: NetworkSettings = { ...networkDefaults };
+const networkKeys = {
+  "network-count": "count",
+  "sensor-distance": "sensorDistance",
+  "sensor-angle": "sensorAngle",
+  "turn-angle": "turnAngle",
+  retention: "retention",
+} as const;
+$("network-controls").after($("brush-controls"));
 const imageCanvas = document.createElement("canvas");
 imageCanvas.width = 256;
 imageCanvas.height = 160;
@@ -33,10 +44,15 @@ let pointer: { x: number; y: number; repel: boolean } | undefined;
 let brushErase = false,
   brushRadius = 5,
   lastPaint: { x: number; y: number } | undefined;
-let importedSnapshot = false;
+let importedSnapshot = false,
+  showAgents = true;
 let pendingResize = false,
   pendingHash = false;
 const scenes: Record<Preset, [string, string]> = {
+  physarum: [
+    "路径，记住了来者",
+    "粒子留下轨迹，轨迹引导粒子。网络从局部反馈中形成。",
+  ],
   flock: ["群体的直觉", "每个个体只看邻居，群体却形成了方向。"],
   orbit: ["围绕一个未知", "向心力与切向运动，共同维持流动的环。"],
   swarm: ["看不见的河流", "同一片流场，把独立个体编织成纹理。"],
@@ -48,7 +64,7 @@ const capture = createCaptureController(canvas, {
     const busy = state !== "idle";
     document
       .querySelectorAll<HTMLInputElement | HTMLButtonElement>(
-        "[data-preset], #seed, #reset, #new-seed, #count, #checkpoint-load, #fullscreen",
+        "[data-preset], #seed, #reset, #new-seed, #count, #checkpoint-load, #fullscreen, #network-count",
       )
       .forEach((control) => (control.disabled = busy));
     $("record").textContent =
@@ -84,6 +100,15 @@ document.querySelector<HTMLAnchorElement>(".skip-link")!.onclick = (event) => {
 function report(s: string) {
   $("status").textContent = s;
 }
+function isNetwork() {
+  return settings.preset === "physarum";
+}
+function isFieldMode() {
+  return isBio() || isNetwork();
+}
+function currentTime() {
+  return bio?.time ?? network?.time ?? sim.time;
+}
 function isBio() {
   return settings.preset === "coral" || settings.preset === "cells";
 }
@@ -98,6 +123,21 @@ function readBioHash() {
   feed = bounded("feed", reactions[preset].feed, 0.01, 0.08);
   kill = bounded("kill", reactions[preset].kill, 0.045, 0.075);
   bioSpeed = Math.round(bounded("rate", 8, 1, 16));
+  networkSettings = {
+    count: Math.round(
+      bounded("networkCount", networkDefaults.count, 500, 10000),
+    ),
+    sensorDistance: bounded(
+      "sensorDistance",
+      networkDefaults.sensorDistance,
+      2,
+      24,
+    ),
+    sensorAngle: bounded("sensorAngle", networkDefaults.sensorAngle, 10, 90),
+    turnAngle: bounded("turnAngle", networkDefaults.turnAngle, 10, 90),
+    retention: bounded("retention", networkDefaults.retention, 0.85, 0.999),
+  };
+  showAgents = q.get("agents") !== "0";
   const color = q.get("palette");
   palette = color === "ember" || color === "mono" ? color : "lagoon";
 }
@@ -120,11 +160,26 @@ function resize() {
   draw(true);
 }
 function draw(clear = false) {
-  if (bio) {
-    bio.pixels(fieldImage.data, palette);
+  const field = bio ?? network;
+  if (field) {
+    field.pixels(fieldImage.data, palette);
     imageContext.putImageData(fieldImage, 0, 0);
     ctx.imageSmoothingEnabled = true;
     ctx.drawImage(imageCanvas, 0, 0, 1200, 760);
+    if (network && showAgents) {
+      ctx.globalCompositeOperation = "screen";
+      ctx.globalAlpha = 0.65;
+      ctx.fillStyle = palette === "ember" ? "#ffe6bd" : "#d6fff3";
+      for (let i = 0; i < network.settings.count; i++)
+        ctx.fillRect(
+          (network.x[i] / 256) * 1200,
+          (network.y[i] / 160) * 760,
+          1.25,
+          1.25,
+        );
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = "source-over";
+    }
   } else {
     ctx.fillStyle = clear ? "#070f14" : "rgba(7,15,20,.15)";
     ctx.fillRect(0, 0, 1200, 760);
@@ -147,7 +202,7 @@ function draw(clear = false) {
     }
     ctx.globalCompositeOperation = "source-over";
   }
-  $("step-count").textContent = String(bio?.time ?? sim.time);
+  $("step-count").textContent = String(currentTime());
 }
 function sync() {
   for (const key of ["count", "speed", "cohesion", "separation"] as const) {
@@ -166,15 +221,31 @@ function sync() {
   $("scene-title").textContent = scenes[settings.preset][0];
   $("scene-caption").textContent = scenes[settings.preset][1];
   $("pause").textContent = paused ? "继续实验" : "暂停实验";
+  $("stage-pause").textContent = paused ? "继续" : "暂停";
   $("state").textContent = paused ? "已暂停" : "运行中";
   document.querySelector(".live")?.classList.toggle("paused", paused);
-  canvas.classList.toggle("drawing-enabled", isBio());
-  $("particle-controls").hidden = isBio();
+  canvas.classList.toggle("drawing-enabled", isFieldMode());
+  $("particle-controls").hidden = isFieldMode();
   $("bio-controls").hidden = !isBio();
-  $("pointer-hint").textContent = isBio()
+  $("network-controls").hidden = !isNetwork();
+  $("brush-controls").hidden = !isFieldMode();
+  for (const [id, key] of Object.entries(networkKeys)) {
+    const value = networkSettings[key];
+    $<HTMLInputElement>(id).value = String(value);
+    $(id + "-value").textContent =
+      key === "retention"
+        ? value.toFixed(3)
+        : String(value) +
+          (key === "sensorAngle" || key === "turnAngle" ? "°" : "");
+  }
+  $("pointer-hint").textContent = isFieldMode()
     ? "按住播种 · Shift 按住擦除"
     : "移动吸引 · 按住排斥";
-  $("model-name").textContent = isBio() ? "GRAY–SCOTT" : "PARTICLE SYSTEM";
+  $("model-name").textContent = isNetwork()
+    ? "TRAIL NETWORK"
+    : isBio()
+      ? "GRAY–SCOTT"
+      : "PARTICLE SYSTEM";
   $("checkpoint-state").textContent = importedSnapshot
     ? "已恢复快照 · 暂停后继续"
     : "保存当前状态，稍后接着演化";
@@ -187,6 +258,7 @@ function sync() {
     $(id + "-value").textContent = id === "rate" ? `${v}×` : v.toFixed(4);
   }
   $<HTMLSelectElement>("palette").value = palette;
+  $<HTMLInputElement>("show-agents").checked = showAgents;
 }
 function reset() {
   importedSnapshot = false;
@@ -195,6 +267,8 @@ function reset() {
     ? new ReactionDiffusion(settings.preset as BioPreset, settings.seed)
     : null;
   if (bio) bio.step(feed, kill, 240);
+  network = isNetwork() ? new Physarum(settings.seed, networkSettings) : null;
+  if (network) network.step(120);
   pointer = undefined;
   pulseUntil = 0;
   draw(true);
@@ -205,6 +279,15 @@ for (const key of ["count", "speed", "cohesion", "separation"] as const)
     settings[key] = Number($<HTMLInputElement>(key).value);
     if (key === "count") reset();
     else sync();
+  });
+for (const [id, key] of Object.entries(networkKeys))
+  $(id).addEventListener("input", () => {
+    networkSettings[key] = Number($<HTMLInputElement>(id).value);
+    if (key === "count") reset();
+    else {
+      if (network) network.settings = { ...networkSettings };
+      sync();
+    }
   });
 for (const key of ["feed", "kill", "rate"])
   $(key).addEventListener("input", () => {
@@ -225,6 +308,7 @@ document.querySelectorAll<HTMLButtonElement>("[data-preset]").forEach(
       reset();
     }),
 );
+$("stage-pause").onclick = () => $("pause").click();
 $("pause").onclick = () => {
   paused = !paused;
   sync();
@@ -232,7 +316,11 @@ $("pause").onclick = () => {
 $("reset").onclick = () => {
   reset();
   report(
-    isBio() ? "已重置；从 240 步预生长状态开始。" : "已用当前种子重新开始。",
+    isNetwork()
+      ? "已重置；从 120 步网络状态开始。"
+      : isBio()
+        ? "已重置；从 240 步预生长状态开始。"
+        : "已用当前种子重新开始。",
   );
 };
 $("new-seed").onclick = () => {
@@ -247,8 +335,9 @@ $("seed").addEventListener("change", () => {
   reset();
 });
 $("pulse").onclick = () => {
-  if (bio) {
-    bio.inject(128, 80, brushErase, brushRadius);
+  const field = bio ?? network;
+  if (field) {
+    field.inject(128, 80, brushErase, brushRadius);
     draw();
     report(
       brushErase
@@ -266,9 +355,14 @@ $("pulse").onclick = () => {
 $("step").onclick = () => {
   paused = true;
   if (bio) bio.step(feed, kill, bioSpeed);
+  else if (network) network.step();
   else sim.step();
   draw();
   sync();
+};
+$("show-agents").onchange = () => {
+  showAgents = $<HTMLInputElement>("show-agents").checked;
+  draw(true);
 };
 $("palette").onchange = () => {
   palette = $<HTMLSelectElement>("palette").value as typeof palette;
@@ -308,8 +402,20 @@ function checkpoint(): Snapshot {
     version: 1 as const,
     settings: { ...settings },
     palette,
-    time: bio?.time ?? sim.time,
+    time: currentTime(),
   };
+  if (network)
+    return {
+      ...common,
+      kind: "network",
+      width: 256,
+      height: 160,
+      network: { ...network.settings },
+      x: Array.from(network.x),
+      y: Array.from(network.y),
+      heading: Array.from(network.heading),
+      field: Array.from(network.field),
+    };
   return bio
     ? {
         ...common,
@@ -337,7 +443,7 @@ $("checkpoint-save").onclick = () => {
     const text = encodeSnapshot(checkpoint());
     download(
       new Blob([text], { type: "application/json" }),
-      `emergence-${settings.preset}-${bio?.time ?? sim.time}.json`,
+      `emergence-${settings.preset}-${currentTime()}.json`,
     );
     report("快照已保存，包含当前状态与笔触；不包含屏幕拖尾。");
   } catch (error) {
@@ -360,6 +466,7 @@ $("checkpoint-file").addEventListener("change", async () => {
     // Build a replacement model completely before touching the running state.
     const nextSim = new Simulation(restored.settings);
     let nextBio: ReactionDiffusion | null = null;
+    let nextNetwork: Physarum | null = null;
     if (restored.kind === "reaction") {
       nextBio = new ReactionDiffusion(
         restored.settings.preset as BioPreset,
@@ -368,6 +475,13 @@ $("checkpoint-file").addEventListener("change", async () => {
       nextBio.a.set(restored.a);
       nextBio.b.set(restored.b);
       nextBio.time = restored.time;
+    } else if (restored.kind === "network") {
+      nextNetwork = new Physarum(restored.settings.seed, restored.network);
+      nextNetwork.x.set(restored.x);
+      nextNetwork.y.set(restored.y);
+      nextNetwork.heading.set(restored.heading);
+      nextNetwork.field.set(restored.field);
+      nextNetwork.time = restored.time;
     } else {
       nextSim.x.set(restored.x);
       nextSim.y.set(restored.y);
@@ -380,6 +494,8 @@ $("checkpoint-file").addEventListener("change", async () => {
     settings = restored.settings;
     sim = nextSim;
     bio = nextBio;
+    network = nextNetwork;
+    if (restored.kind === "network") networkSettings = { ...restored.network };
     palette = restored.palette;
     if (restored.kind === "reaction") {
       feed = restored.feed;
@@ -434,6 +550,14 @@ $("share").onclick = async () => {
     q.set("kill", String(kill));
     q.set("rate", String(bioSpeed));
   }
+  if (network) {
+    q.set("agents", showAgents ? "1" : "0");
+    q.set("networkCount", String(network.settings.count));
+    q.set("sensorDistance", String(network.settings.sensorDistance));
+    q.set("sensorAngle", String(network.settings.sensorAngle));
+    q.set("turnAngle", String(network.settings.turnAngle));
+    q.set("retention", String(network.settings.retention));
+  }
   url.hash = q.toString();
   history.replaceState(null, "", url);
   try {
@@ -461,7 +585,7 @@ function updatePointer(e: PointerEvent) {
     repel: e.buttons > 0,
   };
   if (
-    bio &&
+    (bio || network) &&
     e.buttons &&
     pointer.x >= 0 &&
     pointer.x < 1200 &&
@@ -476,7 +600,7 @@ function updatePointer(e: PointerEvent) {
       Math.max(1, Math.ceil(distance / Math.max(1, brushRadius * 0.5))),
     );
     for (let i = 1; i <= count; i++)
-      bio.inject(
+      (bio ?? network)!.inject(
         from.x + ((point.x - from.x) * i) / count,
         from.y + ((point.y - from.y) * i) / count,
         brushErase || e.shiftKey,
@@ -489,7 +613,7 @@ function updatePointer(e: PointerEvent) {
 canvas.addEventListener("pointermove", updatePointer);
 canvas.addEventListener("pointerdown", (e) => {
   lastPaint = undefined;
-  if (isBio()) canvas.setPointerCapture(e.pointerId);
+  if (isFieldMode()) canvas.setPointerCapture(e.pointerId);
   updatePointer(e);
 });
 canvas.addEventListener("pointerup", (e) => {
@@ -543,9 +667,10 @@ function frame(now: number) {
   if (!paused && !document.hidden) {
     acc += elapsed;
     let steps = 0;
-    const cap = bio ? 2 : 5;
+    const cap = isFieldMode() ? 2 : 5;
     while (acc >= 1000 / 60 && steps < cap) {
       if (bio) bio.step(feed, kill, bioSpeed);
+      else if (network) network.step();
       else
         sim.step(
           pointer ??

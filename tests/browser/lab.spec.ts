@@ -152,3 +152,35 @@ test("skip navigation preserves the current seeded experiment", async ({
   await expect(page.locator("#scene-title")).toHaveText("让一片珊瑚生长");
   await expect(page.locator("#step-count")).toHaveText("240");
 });
+
+test("network settings, drawing, single step and checkpoint roundtrip", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/#preset=physarum&networkCount=1000&sensorDistance=14");
+  await expect(page.locator("#scene-title")).toHaveText("路径，记住了来者");
+  await expect(page.locator("#network-controls")).toBeVisible();
+  await expect(page.locator("#bio-controls")).toBeHidden();
+  await expect(page.locator("#brush-controls")).toBeVisible();
+  await expect(page.locator("#network-count")).toHaveValue("1000");
+  await expect(page.locator("#sensor-distance")).toHaveValue("14");
+  await expect(page.locator("#step-count")).toHaveText("120");
+  await page.locator("#step").click();
+  await expect(page.locator("#step-count")).toHaveText("121");
+  await page.locator("#pulse").click();
+  await page.locator("#share").click();
+  await expect(page).toHaveURL(/networkCount=1000.*sensorDistance=14/);
+  await page.locator(".checkpoint-panel summary").click();
+  const pending = page.waitForEvent("download");
+  await page.locator("#checkpoint-save").click();
+  const path = await (await pending).path();
+  await page.locator("#new-seed").click();
+  await page.locator("#checkpoint-file").setInputFiles(path!);
+  await expect(page.locator("#step-count")).toHaveText("121");
+  await expect(page.locator("#state")).toHaveText("已暂停");
+  await page.locator("#stage-pause").click();
+  await expect(page.locator("#state")).toHaveText("运行中");
+  expect(errors).toEqual([]);
+});
