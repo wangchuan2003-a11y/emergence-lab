@@ -67,3 +67,7 @@ Added a runtime build-label check and failure-only Playwright traces/screenshots
 ## 2026-09-07 · Closing language-state fix
 
 Final in-browser inspection reproduced a mixed-language state message after toggling EN: the scene title changed, but the last action message remained Chinese. Messages now retain their source template and captured values, including bilingual recipe names, so the existing message can be retranslated without resetting the model or changing its historical numbers. The single-step control also exposes its actual numerical-step count in its tooltip/accessibility name.
+
+## Final deployed checkpoint
+
+Application revision **02bf7c2** passed [Actions run 34052301686](https://github.com/wangchuan2003-a11y/emergence-lab/actions/runs/34052301686): **104 core tests** and **63 browser cases** across Chromium desktop/mobile and Firefox desktop. The deployed build label, a prepared 1200-step scene, and current desktop/mobile/gallery views were read back and captured. See verification.md for exact evidence and limits. Later documentation-only commits do not change the deployed application revision.

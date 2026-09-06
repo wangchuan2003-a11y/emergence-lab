@@ -4,7 +4,7 @@ This report distinguishes tested software behavior from scientific/model validit
 
 ## Latest completed compatibility checkpoint
 
-[Commit a927030](https://github.com/wangchuan2003-a11y/emergence-lab/commit/a927030) was built and deployed by [Actions run 34051006896](https://github.com/wangchuan2003-a11y/emergence-lab/actions/runs/34051006896). The run passed **104 core tests** and **57 browser cases**, spanning Chromium desktop, Chromium mobile viewport and Firefox desktop.
+[Commit 02bf7c2](https://github.com/wangchuan2003-a11y/emergence-lab/commit/02bf7c2) was built and deployed by [Actions run 34052301686](https://github.com/wangchuan2003-a11y/emergence-lab/actions/runs/34052301686). The run passed **104 core tests** and **63 browser cases**, spanning Chromium desktop, Chromium mobile viewport and Firefox desktop.
 
 | Area               | Evidence                                                                                                                          |
 | ------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
@@ -38,3 +38,15 @@ npx playwright test
 The build generates the offline worker. Browser checks use the production preview rather than the development server. Failed CI browser runs retain a trace and screenshot artifact for seven days; these tests use only synthetic model data.
 
 Preview generation is optional: run `npm test` first, then use `node scripts/render-recipes.mjs` or `node scripts/render-preview.mjs` with ffmpeg available. Generated assets are derived from the documented numerical settings, not from a video-generation model.
+
+## Final deployed readback
+
+The public page was opened after deployment and displayed **Build 02bf7c2**. The fluorescent-maze recipe completed at numerical step **1200** and remained paused as requested by the current playback state. At a 390px browser viewport, document scroll width and client width were both **375px**, and recipe cards fit within their intended horizontal gallery.
+
+Selected current views, captured from the deployed app:
+
+- [Desktop overview, 1440×1000](release-desktop.png)
+- [Scene gallery and explanations](release-gallery.png)
+- [Mobile overview, 390×844](release-mobile.png)
+
+These screenshots show those particular viewports and model states. They supplement the interaction tests; they do not substitute for every device or visual condition.
