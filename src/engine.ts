@@ -1,4 +1,4 @@
-export type Preset = "flock" | "orbit" | "swarm";
+export type Preset = "flock" | "orbit" | "swarm" | "coral" | "cells";
 export interface Settings {
   preset: Preset;
   count: number;
@@ -33,7 +33,9 @@ export function parseSettings(hash: string): Settings {
     return Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : fallback;
   };
   return {
-    preset: ["flock", "orbit", "swarm"].includes(q.get("preset") ?? "")
+    preset: ["flock", "orbit", "swarm", "coral", "cells"].includes(
+      q.get("preset") ?? "",
+    )
       ? (q.get("preset") as Preset)
       : "flock",
     count: Math.round(num("count", 600, 100, 1400)),

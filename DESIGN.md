@@ -15,3 +15,6 @@ Local controls update the simulation immediately. The active preset uses a tinte
 
 ## Verification
 Desktop and 390px mobile manually inspected in the browser. Controls, seed and share behavior are also covered by Playwright tests. A bounded final review inspected the source and saved screenshots: `docs/desktop.png` shows the ordinary desktop viewport with an undistorted orbit; `docs/mobile.png` shows the mobile controls at a scrolled position. These images establish visible layout only, not full-page coverage or live interaction. The fullscreen minimum-height fix was confirmed in CSS, without a separate fullscreen device test. This final review did not rerun Playwright or audit its test coverage. These checks cover this release, not every device or assistive technology.
+
+## Biological exhibition update (2026-09-06)
+The current palette is deep navy (#0b1118) with a near-black stage (#070f14), muted cyan/sage typography and three selectable render palettes. The stage/aside layout is preserved. The reaction field is rendered with directional concentration-gradient lighting, scaled uniformly into the existing canvas. New presets precede the preserved particle presets; controls switch according to the underlying model. This section supersedes the original ivory palette above. Current screenshot: docs/biological-desktop.png.

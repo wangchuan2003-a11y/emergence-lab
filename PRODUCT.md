@@ -14,3 +14,6 @@ Three presets; population, speed, cohesion and separation controls; pointer inte
 
 ## Scope
 No backend, external AI calls, account or private source data. This is an educational and visual simulation, not a validated predictive model of biological or physical systems.
+
+## 2026-09-06 extension
+Two Gray–Scott reaction-diffusion presets (coral and cells), parameter controls, three render palettes, single stepping and browser-native short video export. Source attribution and numerical/biological limits are documented in docs/references.md. No external AI API or biological data is used at runtime.

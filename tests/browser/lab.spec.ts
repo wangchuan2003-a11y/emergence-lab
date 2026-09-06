@@ -38,3 +38,42 @@ test("reduced motion starts paused and can resume", async ({ page }) => {
   await page.locator("#pause").click();
   await expect(page.locator("#state")).toHaveText("运行中");
 });
+
+test("reaction controls, seeded share, single step and recording", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/#preset=coral");
+  await expect(page.locator("#scene-title")).toHaveText("让一片珊瑚生长");
+  await expect(page.locator("#bio-controls")).toBeVisible();
+  await expect(page.locator("#particle-controls")).toBeHidden();
+  await expect(page.locator("#step-count")).toHaveText("240");
+  await page.locator("#step").click();
+  await expect(page.locator("#step-count")).toHaveText("248");
+  await page.locator("#palette").selectOption("ember");
+  await page.locator("#feed").press("ArrowRight");
+  await expect(page.locator("#feed-value")).toHaveText("0.0546");
+  await page.locator("#share").click();
+  await expect(page).toHaveURL(/palette=ember.*feed=0.0546/);
+  await page.reload();
+  await expect(page.locator("#feed")).toHaveValue("0.0546");
+  await expect(page.locator("#palette")).toHaveValue("ember");
+  await page.locator('[data-preset="cells"]').click();
+  await expect(page.locator("#kill-value")).toHaveText("0.0649");
+  const download = page.waitForEvent("download");
+  await page.locator("#record").click();
+  await expect(page.locator("#record")).toHaveText("停止并保存");
+  await page.locator("#step").click();
+  await page.locator("#record").click();
+  expect((await download).suggestedFilename()).toMatch(
+    /emergence-cells\.(webm|mp4)/,
+  );
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  expect(errors).toEqual([]);
+});

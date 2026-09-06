@@ -21,7 +21,7 @@
           ><span class="brand-mark"></span>EMERGENCE<span class="brand-light"
             >LAB</span
           ></a
-        ><span class="header-note">复杂世界，简单规则。</span
+        ><span class="header-note">形态 · 生长 · 涌现</span
         ><a
           class="source"
           href="https://github.com/wangchuan2003-a11y/emergence-lab"
@@ -32,19 +32,20 @@
       </header>
       <main>
         <section class="intro">
-          <h1>秩序，自发发生<span>。</span></h1>
+          <h1>看见生命的<span>纹理。</span></h1>
           <p>
-            没有指挥者。只有简单规则。<br />改变一个参数，看整个世界如何回应。
+            从鸟群到珊瑚，从局部规则到复杂形态。<br />亲手播种一个世界，观察它如何生长。
           </p>
         </section>
         <section class="lab" aria-label="交互实验室">
           <div class="stage">
             <canvas
               id="world"
-              aria-label="粒子模拟画布；使用右侧控件切换规则，鼠标移动吸引粒子，按住排斥。键盘可通过中心扰动按钮操作。"
+              aria-label="交互模拟画布；粒子模式移动吸引、按住排斥；生长模式按住播种、Shift 按住擦除。键盘可通过中心扰动与单步按钮操作。"
             ></canvas>
             <div class="stage-top">
               <span class="live"><i></i><span id="state">运行中</span></span
+              ><span id="model-name">PARTICLE SYSTEM</span
               ><span id="fps">— FPS</span>
             </div>
             <div class="stage-caption">
@@ -52,18 +53,23 @@
               <p id="scene-caption">每个个体只看邻居，群体却形成了方向。</p>
             </div>
             <div class="stage-bottom">
-              <span>移动吸引 · 按住排斥</span
+              <span id="pointer-hint">移动吸引 · 按住排斥</span
               ><button id="pulse">中心扰动</button
               ><button id="fullscreen">全屏</button>
             </div>
           </div>
           <aside>
             <div class="panel-title">
-              <h2>创造你的秩序</h2>
+              <h2>形态实验室</h2>
               <span>LIVE LAB</span>
             </div>
             <fieldset class="presets">
-              <legend>选择一种规则</legend>
+              <legend>选择一个世界</legend>
+              <button data-preset="coral" aria-pressed="false">
+                <span>04</span>珊瑚生长 <small>Coral</small></button
+              ><button data-preset="cells" aria-pressed="false">
+                <span>05</span>细胞幻象 <small>Mitosis</small>
+              </button>
               <button data-preset="flock" aria-pressed="true">
                 <span>01</span>鸟群 <small>Flocking</small></button
               ><button data-preset="orbit" aria-pressed="false">
@@ -72,7 +78,7 @@
                 <span>03</span>流场 <small>Flow field</small>
               </button>
             </fieldset>
-            <div class="sliders">
+            <div class="sliders" id="particle-controls">
               <label for="count"
                 >粒子数量 <output id="count-value">600</output></label
               ><input
@@ -111,9 +117,57 @@
                 value="1.1"
               />
             </div>
+            <div class="sliders" id="bio-controls" hidden>
+              <label for="feed"
+                >补给率 F <output id="feed-value">0.0545</output></label
+              ><input
+                id="feed"
+                type="range"
+                min="0.01"
+                max="0.08"
+                step="0.0001"
+                value="0.0545"
+              />
+              <label for="kill"
+                >消耗率 K <output id="kill-value">0.0620</output></label
+              ><input
+                id="kill"
+                type="range"
+                min="0.045"
+                max="0.075"
+                step="0.0001"
+                value="0.062"
+              />
+              <label for="rate"
+                >演化速度 <output id="rate-value">8×</output></label
+              ><input
+                id="rate"
+                type="range"
+                min="1"
+                max="16"
+                step="1"
+                value="8"
+              />
+              <p class="model-note">
+                Gray–Scott 化学模式。不是生物细胞。<br />初始状态预生长 240
+                步；参数可能使图案消失。
+              </p>
+            </div>
+            <div class="palette-row">
+              <label for="palette">影调</label
+              ><select id="palette">
+                <option value="lagoon">深海荧光</option>
+                <option value="ember">琥珀熔岩</option>
+                <option value="mono">冷光银盐</option></select
+              ><span>步 <output id="step-count">0</output></span>
+            </div>
             <div class="transport">
               <button id="pause" class="primary">暂停实验</button
               ><button id="reset">重新开始</button>
+            </div>
+            <div class="secondary-actions">
+              <button id="step">单步</button
+              ><button id="record">录制 8 秒</button>
             </div>
             <div class="secondary-actions">
               <button id="save">保存画面 ↗</button
@@ -133,32 +187,33 @@
               </button>
             </div>
             <p class="note">
-              相同参数 + 相同种子 = 相同初始世界。<br />所有计算都在你的浏览器中完成。
+              参数链接保存初始条件，不保存当前笔触。<br />所有计算都在你的浏览器中完成。
             </p>
             <p id="status" role="status" aria-live="polite"></p>
           </aside>
         </section>
         <section class="explanation">
           <div>
-            <span class="section-label">BEHIND THE MOTION</span>
-            <h2>局部规则。<br />全局之美。</h2>
+            <h2>简单规则。<br />生长的可能。</h2>
           </div>
           <div>
-            <h3>靠近，但别太近。</h3>
+            <h3>两种物质，无限纹理。</h3>
             <p>
-              聚合让粒子靠近邻居，分离让它们保留空间，对齐让它们朝相近方向运动。没有任何一个粒子知道群体的形状。
+              反应扩散模式中，A 持续补给，B
+              被消耗，两者以不同速度扩散。微小扰动会长成斑点、分枝与迷宫。立体明暗只是浓度场的视觉映射。
             </p>
           </div>
           <div>
-            <h3>不是视频，是正在发生。</h3>
+            <h3>参考可追溯，结果可探索。</h3>
             <p>
-              每一帧都重新计算邻域中的相互作用。试着降低聚合倾向，或提高安全距离，观察整体结构如何变化。
+              反应扩散参照 Karl Sims 的 Gray–Scott 教程；鸟群参照 Craig Reynolds
+              的 Boids。这里是探索性模型与艺术表达，不用于预测真实生物过程。
             </p>
             <a
-              href="https://www.red3d.com/cwr/boids/"
+              href="https://www.karlsims.com/rd.html"
               target="_blank"
               rel="noopener"
-              >了解 Craig Reynolds 的 Boids ↗</a
+              >阅读 Karl Sims 的模型说明 ↗</a
             >
           </div>
         </section>

@@ -73,3 +73,17 @@ An interactive, deterministic particle laboratory built with **TypeScript + Canv
 Boids concept: Craig Reynolds, 1987. The code here is an independent educational implementation. Manrope and JetBrains Mono are self-hosted with their SIL Open Font License files included in `public/`.
 
 Project code: MIT. Built with AI assistance; claims about behavior are covered by the included tests rather than implied production adoption.
+
+## 生长模式升级
+
+![反应扩散新版截图](docs/biological-desktop.png)
+
+[直接进入珊瑚生长](https://wangchuan2003-a11y.github.io/emergence-lab/#preset=coral) · [细胞幻象](https://wangchuan2003-a11y.github.io/emergence-lab/#preset=cells)
+
+新增 **珊瑚生长 / 细胞幻象** 两个 Gray–Scott 反应扩散预设：按住画布播种，Shift 按住擦除；键盘或手机可使用中心扰动。调整补给率、消耗率和演化速度，切换深海荧光、琥珀熔岩或冷光银盐影调。单步按钮暂停并推进一次（反应模式推进所选倍数的数值步）。
+
+「录制 8 秒」使用浏览器 MediaRecorder 导出仅含画布的视频，可提前停止。浏览器支持 WebM 时优先 WebM，否则尝试 MP4；不支持时保留 PNG 导出。录制不会强制恢复暂停的实验，首次下载权限由浏览器管理。
+
+这两个模式是**虚拟化学场产生的形态**，不是真实生物细胞或珊瑚组织的预测模型。初始化包含 240 步预生长，页面显示实际数值步数。调整参数可能导致图案消退。原来的粒子模式与分享链接仍然兼容。
+
+方程、参考参数与视觉灵感来自 [Karl Sims 原始教程](https://www.karlsims.com/rd.html)。完整的来源与不确定性见 [references.md](docs/references.md)。新增实现位于 `src/reaction.ts`；新增数值测试包括独立模板算子的逐点核对、均匀场平衡、播种、擦除、可复现性和默认展示场的活跃性。
