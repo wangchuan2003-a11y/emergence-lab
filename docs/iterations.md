@@ -50,4 +50,10 @@ Added an eight-entry undo/redo history for brush strokes and center disturbances
 
 Three real model-derived recipes are available: fluorescent maze at 1200 steps, amber spots at 800, and silver branches at 600. Their image assets and metadata are generated from the same parameters. Loading uses bounded model batches with event-loop yields; it prepares a separate state, supports cancellation/latest-request wins, preserves the prior play/pause preference, and only replaces the live model when complete.
 
-Added a static element-binding contract after it caught a missing recipe-navigation control during development. Numerical/history/recipe/DOM tests and browser flow checks cover this iteration; full release status pending.
+Added a static element-binding contract after it caught a missing recipe-navigation control during development. Numerical/history/recipe/DOM tests and browser flow checks cover this iteration; Verified/deployed: 115e795, Actions 34050606304, 104 core and 34 browser cases passed.
+
+## 2026-09-07 · Final interaction and compatibility validation
+
+A final review found that a stroke starting in canvas letterboxing could enter the model without creating an undo checkpoint. History now records at the first actual paint event, once per gesture, including that edge path. A browser regression compares the full restored snapshot against the pre-stroke state.
+
+Added Firefox desktop to the existing Chromium desktop/mobile matrix and a media-decoding test for exported recordings, so video verification goes beyond filename/download creation. This round adds no new simulation mechanisms. Compatibility and deployment results pending.

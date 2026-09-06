@@ -435,3 +435,79 @@ test("single stepping preserves a pending particle disturbance", async ({
     ),
   ).toBeLessThan(0.00002);
 });
+
+test("a stroke beginning in the letterbox can be undone as one edit", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/#preset=coral");
+  await page.locator(".checkpoint-panel summary").click();
+  const { readFile } = await import("node:fs/promises");
+  const first = page.waitForEvent("download");
+  await page.locator("#checkpoint-save").click();
+  const baseline = JSON.parse(
+    await readFile((await (await first).path())!, "utf8"),
+  );
+  await page.locator("#world").scrollIntoViewIfNeeded();
+  const box = (await page.locator("#world").boundingBox())!;
+  await page.mouse.move(box.x + box.width * 0.5, box.y + 5);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5, {
+    steps: 5,
+  });
+  await page.mouse.up();
+  await expect(page.locator("#undo")).toBeEnabled();
+  await page.locator("#undo").click();
+  const second = page.waitForEvent("download");
+  await page.locator("#checkpoint-save").click();
+  const restored = JSON.parse(
+    await readFile((await (await second).path())!, "utf8"),
+  );
+  expect(restored).toEqual(baseline);
+  await expect(page.locator("#undo")).toBeDisabled();
+});
+
+test("recorded output decodes into real video frames", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/#preset=coral");
+  const pending = page.waitForEvent("download");
+  await page.locator("#record").click();
+  await page.locator("#step").click();
+  await page.locator("#step").click();
+  await page.locator("#record").click();
+  const file = await pending;
+  const { readFile } = await import("node:fs/promises");
+  const bytes = await readFile((await file.path())!);
+  expect(bytes.byteLength).toBeGreaterThan(100);
+  const mime = file.suggestedFilename().endsWith(".mp4")
+    ? "video/mp4"
+    : "video/webm";
+  const source = `data:${mime};base64,${bytes.toString("base64")}`;
+  const dimensions = await page.evaluate(
+    (src) =>
+      new Promise<{ width: number; height: number }>((resolve, reject) => {
+        const video = document.createElement("video");
+        const timer = setTimeout(
+          () => reject(new Error("Exported video did not decode")),
+          8000,
+        );
+        video.muted = true;
+        video.preload = "auto";
+        video.onloadeddata = () => {
+          clearTimeout(timer);
+          resolve({ width: video.videoWidth, height: video.videoHeight });
+          video.removeAttribute("src");
+          video.load();
+        };
+        video.onerror = () => {
+          clearTimeout(timer);
+          reject(new Error("Exported video is not decodable"));
+        };
+        video.src = src;
+        video.load();
+      }),
+    source,
+  );
+  expect(dimensions.width).toBeGreaterThan(0);
+  expect(dimensions.height).toBeGreaterThan(0);
+});

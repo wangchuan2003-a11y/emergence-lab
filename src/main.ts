@@ -53,6 +53,7 @@ let feed = 0.0545,
   bioSpeed = 8,
   palette: "lagoon" | "ember" | "mono" = "lagoon";
 let pointer: { x: number; y: number; repel: boolean } | undefined;
+let strokeRecorded = false;
 let brushErase = false,
   brushRadius = 5,
   lastPaint: { x: number; y: number } | undefined;
@@ -321,14 +322,12 @@ async function selectRecipe(id: string) {
       }),
     );
     canvas.focus({ preventScroll: true });
-    document
-      .querySelector(".stage")!
-      .scrollIntoView({
-        block: "start",
-        behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
-          ? "auto"
-          : "smooth",
-      });
+    document.querySelector(".stage")!.scrollIntoView({
+      block: "start",
+      behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+    });
   } catch (error) {
     if (request === importRequest) report(tr("场景准备失败，请重试。"));
     console.error(error);
@@ -854,6 +853,10 @@ function updatePointer(e: PointerEvent) {
   pointer = { x: position.x, y: position.y, repel: e.buttons > 0 };
   const field = bio ?? network;
   if (field && e.buttons) {
+    if (!strokeRecorded) {
+      rememberEdit();
+      strokeRecorded = true;
+    }
     importRequest++;
     const point = { x: position.x, y: position.y },
       from = lastPaint ?? point;
@@ -875,18 +878,16 @@ function updatePointer(e: PointerEvent) {
 }
 canvas.addEventListener("pointermove", updatePointer);
 canvas.addEventListener("pointerdown", (e) => {
+  strokeRecorded = false;
   lastPaint = undefined;
-  if (isFieldMode()) {
-    const rect = canvas.getBoundingClientRect();
-    const point = pointToDomain(
-      view,
-      ((e.clientX - rect.left) * canvas.width) / rect.width,
-      ((e.clientY - rect.top) * canvas.height) / rect.height,
-    );
-    if (point.inside) rememberEdit();
-    canvas.setPointerCapture(e.pointerId);
-  }
+  if (isFieldMode()) canvas.setPointerCapture(e.pointerId);
   updatePointer(e);
+});
+window.addEventListener("pointerup", () => {
+  strokeRecorded = false;
+});
+window.addEventListener("pointercancel", () => {
+  strokeRecorded = false;
 });
 canvas.addEventListener("pointerup", (e) => {
   lastPaint = undefined;
