@@ -4,7 +4,7 @@ This report distinguishes tested software behavior from scientific/model validit
 
 ## Latest completed compatibility checkpoint
 
-[Commit 02bf7c2](https://github.com/wangchuan2003-a11y/emergence-lab/commit/02bf7c2) was built and deployed by [Actions run 34052301686](https://github.com/wangchuan2003-a11y/emergence-lab/actions/runs/34052301686). The run passed **104 core tests** and **63 browser cases**, spanning Chromium desktop, Chromium mobile viewport and Firefox desktop.
+[Commit b467abf](https://github.com/wangchuan2003-a11y/emergence-lab/commit/b467abf) was built and deployed by [Actions run 34053004139](https://github.com/wangchuan2003-a11y/emergence-lab/actions/runs/34053004139). The run passed **104 core tests** and **63 browser cases**, spanning Chromium desktop, Chromium mobile viewport and Firefox desktop.
 
 | Area               | Evidence                                                                                                                          |
 | ------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
@@ -39,9 +39,9 @@ The build generates the offline worker. Browser checks use the production previe
 
 Preview generation is optional: run `npm test` first, then use `node scripts/render-recipes.mjs` or `node scripts/render-preview.mjs` with ffmpeg available. Generated assets are derived from the documented numerical settings, not from a video-generation model.
 
-## Final deployed readback
+## Deployed readback and interface captures
 
-The public page was opened after deployment and displayed **Build 02bf7c2**. The fluorescent-maze recipe completed at numerical step **1200** and remained paused as requested by the current playback state. At a 390px browser viewport, document scroll width and client width were both **375px**, and recipe cards fit within their intended horizontal gallery.
+The final dependency-cleanup build was reloaded from the public site and displayed **Build b467abf**. The interface captures below record build **02bf7c2**. The fluorescent-maze recipe completed at numerical step **1200** and remained paused as requested by the current playback state. At a 390px browser viewport, document scroll width and client width were both **375px**, and recipe cards fit within their intended horizontal gallery.
 
 Selected current views, captured from the deployed app:
 

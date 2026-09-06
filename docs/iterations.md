@@ -75,3 +75,5 @@ Application revision **02bf7c2** passed [Actions run 34052301686](https://github
 ## Dependency closeout
 
 Removed the two unused font package dependencies after checking source, scripts, tests and docs for references. The self-hosted font files and their licenses remain in the repository. Local production output retained the same asset hashes and offline-shell version; all 104 core tests passed after removal. The cleanup is validated again by CI before publication.
+
+Final dependency-closeout evidence: **b467abf** passed [Actions 34053004139](https://github.com/wangchuan2003-a11y/emergence-lab/actions/runs/34053004139) with **104 core tests** and **63 browser cases**. The public page displayed the matching build revision after reload. Local development/preview servers were stopped; the public deployment remains the delivery target.
