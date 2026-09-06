@@ -4,7 +4,9 @@
 
 [在线体验](https://wangchuan2003-a11y.github.io/emergence-lab/#preset=coral) · [黏菌网络](https://wangchuan2003-a11y.github.io/emergence-lab/#preset=physarum) · [科学来源](docs/references.md) · [迭代记录](docs/iterations.md)
 
-![反应扩散的实际运行截图](docs/biological-desktop.png)
+![模型数值状态生成的动画预览](docs/emergence-preview.gif)
+
+左：反应扩散；右：轨迹网络。由实际模拟状态生成，循环演示，不代表物理时间。
 
 一个在浏览器本地运行的人工生命与群体运动实验室。TypeScript + Canvas 2D；无需账户、后端或 API Key。
 
@@ -96,3 +98,9 @@ PNG 可选择屏幕原样、1920 px 或 3840 px。高清模式按模型的原始
 ### English interface
 
 Use **EN** in the header or open [the English lab](https://wangchuan2003-a11y.github.io/emergence-lab/#preset=coral&lang=en). Switching languages preserves the running model and numerical step. Shared settings include language; scientific states and checkpoint files are independent of UI language.
+
+### 离线重开
+
+生产页面出现“离线副本已就绪”后，可以断网重新打开实验室。缓存只包含该项目的静态页面、代码、样式与字体，不包含你导入的快照或第三方内容。离线副本可能是上次完整缓存的版本；新版本不会强制刷新正在进行的实验。初次访问、清空浏览器数据后仍需要网络。
+
+开发者可在运行 `npm test` 后执行 `node scripts/render-preview.mjs` 重建 README 动画，需自行具备 ffmpeg。正常构建与应用运行不依赖 ffmpeg。

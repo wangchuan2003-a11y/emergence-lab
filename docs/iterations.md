@@ -34,4 +34,12 @@ Core checks: 68 passed locally including fit/inverse mapping and Float32 import 
 
 Added an EN/中文 switch with source-key translations for static controls, dynamic status messages, scientific descriptions, tooltips and accessibility labels. Language selection updates URL settings without resetting the model; sharing includes the current language. Recording controls keep their live state across a language switch. The simulation and snapshot data are language-independent.
 
-The translation dictionary is coverage-checked against the marked HTML and snapshot/capture errors. English desktop and phone layouts were manually inspected; browser regression cases check language/state preservation and switching during recording. Core suite: 73 passed locally; CI/deployment pending.
+The translation dictionary is coverage-checked against the marked HTML and snapshot/capture errors. English desktop and phone layouts were manually inspected; browser regression cases check language/state preservation and switching during recording. Verified/deployed: 7f42a52, GitHub Actions 34047069541, 73 core and 24 browser cases passed.
+
+## 2026-09-07 · Offline shell and model-generated preview
+
+Production builds now emit a content-versioned service worker. It precaches only the app's static shell, isolates caches by application scope, and leaves user snapshots/third-party requests alone. Network-first navigation does not overwrite the pinned offline index, so an old worker never mixes new HTML with uncached new bundles. No forced reload or skipWaiting is used; readiness means a usable offline copy, not necessarily the newest network version.
+
+Generated a 45-frame, 512×160 looping GIF directly from reaction and network arrays for the GitHub README. The optional generator uses ffmpeg; normal builds/runtime remain dependency-free beyond the existing web toolchain.
+
+Verification so far: 79 Node tests and build passed; GIF stream metadata confirms 45 frames at the intended size. Production-browser offline reopening is included in CI for desktop and mobile. Deployment pending.

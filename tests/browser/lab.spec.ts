@@ -316,3 +316,29 @@ test("language switch during recording preserves the capture lifecycle", async (
   );
   await expect(page.locator("#reset")).toBeEnabled();
 });
+
+test("an installed offline copy opens in a new page without a network", async ({
+  page,
+  context,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/#preset=physarum&lang=en&networkCount=1000");
+  await expect(page.locator("#offline-state")).toHaveText(
+    "Offline copy ready",
+    { timeout: 15000 },
+  );
+  await context.setOffline(true);
+  const offline = await context.newPage();
+  const errors: string[] = [];
+  offline.on("pageerror", (e) => errors.push(e.message));
+  await offline.emulateMedia({ reducedMotion: "reduce" });
+  await offline.goto("/#preset=physarum&lang=en&networkCount=1000");
+  await expect(offline.locator("#scene-title")).toHaveText(
+    "Trails that remember",
+  );
+  await expect(offline.locator("#step-count")).toHaveText("120");
+  await offline.locator("#step").click();
+  await expect(offline.locator("#step-count")).toHaveText("121");
+  expect(errors).toEqual([]);
+  await context.setOffline(false);
+});

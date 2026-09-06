@@ -1,4 +1,4 @@
-@import url("/fonts.css");
+@import "./fonts.css";
 :root {
   font-family: "Lab Sans", "Segoe UI", "Microsoft YaHei", sans-serif;
   color: #202927;
@@ -423,7 +423,7 @@ footer {
   font-size: 11px;
   color: #606963;
 }
-footer > span:first-child {
+footer > .footer-brand {
   font-size: 10px;
   letter-spacing: 0.05em;
 }
@@ -553,7 +553,7 @@ footer > span:first-child {
     flex-wrap: wrap;
     line-height: 1.8;
   }
-  footer > span:nth-child(2) {
+  footer > .footer-note {
     display: none;
   }
 }

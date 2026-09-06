@@ -1,4 +1,5 @@
 import "./style.css";
+import { registerOffline } from "./offline";
 import { translate, applyTranslations, type Language } from "./i18n";
 import {
   createRenderer,
@@ -51,6 +52,7 @@ let pointer: { x: number; y: number; repel: boolean } | undefined;
 let brushErase = false,
   brushRadius = 5,
   lastPaint: { x: number; y: number } | undefined;
+let offlineReady = false;
 let importRequest = 0;
 let importedSnapshot = false,
   showAgents = true;
@@ -272,6 +274,9 @@ function sync() {
   }
   $<HTMLSelectElement>("palette").value = palette;
   $<HTMLInputElement>("show-agents").checked = showAgents;
+  $("offline-state").textContent = tr(
+    offlineReady ? "离线副本已就绪" : "浏览器本地计算",
+  );
 }
 function reset() {
   importRequest++;
@@ -719,6 +724,17 @@ window.addEventListener("pagehide", (event) => {
 readBioHash();
 reset();
 applyLanguage();
+registerOffline({
+  enabled: !import.meta.env.DEV,
+  onReady: () => {
+    offlineReady = true;
+    $("offline-state").textContent = tr("离线副本已就绪");
+  },
+  onError: () => {
+    offlineReady = false;
+    $("offline-state").textContent = tr("浏览器本地计算");
+  },
+});
 new ResizeObserver(resize).observe(canvas);
 resize();
 let last = performance.now(),

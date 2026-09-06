@@ -2,6 +2,8 @@ export type Language = "zh" | "en";
 
 // Keep the Chinese source in data attributes so switching languages is reversible.
 export const translations: Record<string, string> = {
+  浏览器本地计算: "Runs in your browser",
+  离线副本已就绪: "Offline copy ready",
   "改变简单规则，亲手创造复杂秩序。一个开源、可复现的交互式粒子涌现实验室。":
     "Change simple rules and create complex patterns. An open-source, reproducible lab for exploring emergent systems.",
   "Emergence Lab · 涌现实验室": "Emergence Lab · Interactive Simulations",
