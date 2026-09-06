@@ -115,10 +115,10 @@ self.addEventListener("fetch", (event) => {
       try {
         const response = await fetch(request);
         if (response.ok) return response;
-        const cached = await (await caches.open(CACHE_NAME)).match(INDEX_URL);
+        const cached = await (await caches.open(CACHE_NAME)).match(INDEX_URL, { ignoreVary: true });
         return cached || response;
       } catch (error) {
-        const cached = await (await caches.open(CACHE_NAME)).match(INDEX_URL);
+        const cached = await (await caches.open(CACHE_NAME)).match(INDEX_URL, { ignoreVary: true });
         if (cached) return cached;
         throw error;
       }
@@ -127,8 +127,9 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (!RESOURCE_URLS.has(url.href)) return;
+  // Exact immutable public build assets do not vary by request Origin; preview servers may still emit Vary: Origin.
   event.respondWith((async () => {
-    const cached = await (await caches.open(CACHE_NAME)).match(request);
+    const cached = await (await caches.open(CACHE_NAME)).match(request, { ignoreVary: true });
     return cached || fetch(request);
   })());
 });

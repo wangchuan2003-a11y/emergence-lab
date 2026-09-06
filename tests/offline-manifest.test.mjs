@@ -24,6 +24,7 @@ function workerHarness(manifest, scope = "https://example.test/lab/") {
   let claims = 0;
   let network = async () => new Response("online");
   let installError;
+  let varyOnOrigin = false;
   const key = (request) =>
     typeof request === "string" ? request : request.url;
   const caches = {
@@ -35,10 +36,22 @@ function workerHarness(manifest, scope = "https://example.test/lab/") {
           if (installError) throw installError;
           for (const request of requests) {
             installed.push(request);
-            entries.set(key(request), new Response("cached:" + key(request)));
+            entries.set(
+              key(request),
+              new Response("cached:" + key(request), {
+                headers: varyOnOrigin ? { Vary: "Origin" } : {},
+              }),
+            );
           }
         },
-        async match(request) {
+        async match(request, options = {}) {
+          const response = entries.get(key(request));
+          if (
+            response?.headers.get("Vary") === "Origin" &&
+            request.headers?.Origin &&
+            !options.ignoreVary
+          )
+            return undefined;
           return entries.get(key(request))?.clone();
         },
       };
@@ -82,6 +95,9 @@ function workerHarness(manifest, scope = "https://example.test/lab/") {
     setNetwork(handler) {
       network = handler;
     },
+    enableOriginVary() {
+      varyOnOrigin = true;
+    },
     failInstall(error) {
       installError = error;
     },
@@ -94,10 +110,10 @@ function workerHarness(manifest, scope = "https://example.test/lab/") {
       });
       await pending;
     },
-    request(url, { method = "GET", mode = "cors" } = {}) {
+    request(url, { method = "GET", mode = "cors", headers = {} } = {}) {
       let response;
       events.get("fetch")({
-        request: { url, method, mode },
+        request: { url, method, mode, headers },
         respondWith(promise) {
           response = promise;
         },
@@ -307,4 +323,22 @@ test("a newer online page never replaces the older worker's complete offline she
   const oldAsset = await worker.request(oldAssetUrl);
   assert.equal(await oldAsset.text(), "old compatible application");
   assert.equal(cache.size, 2);
+});
+
+test("immutable static modules remain available when CORS requests have a different Origin header", async () => {
+  const worker = workerHarness(buildManifest(files));
+  worker.enableOriginVary();
+  await worker.dispatch("install");
+  worker.setNetwork(async () => {
+    throw new Error("offline");
+  });
+  const response = await worker.request(
+    "https://example.test/lab/assets/app.js",
+    { headers: { Origin: "https://example.test" } },
+  );
+  assert.equal(
+    await response.text(),
+    "cached:https://example.test/lab/assets/app.js",
+  );
+  assert.equal(worker.fetched.length, 0);
 });
