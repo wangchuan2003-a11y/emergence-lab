@@ -1,4 +1,12 @@
 import "./style.css";
+import {
+  createRenderer,
+  getDomain,
+  fitView,
+  pointToDomain,
+  type RenderSource,
+  type View,
+} from "./render";
 import { Physarum, networkDefaults, type NetworkSettings } from "./physarum";
 import { createCaptureController } from "./capture";
 import {
@@ -23,18 +31,12 @@ const networkKeys = {
   retention: "retention",
 } as const;
 $("network-controls").after($("brush-controls"));
-const imageCanvas = document.createElement("canvas");
-imageCanvas.width = 256;
-imageCanvas.height = 160;
-const imageContext = imageCanvas.getContext("2d")!,
-  fieldImage = imageContext.createImageData(256, 160);
+const renderer = createRenderer();
+let view: View = { scale: 0, x: 0, y: 0, width: 0, height: 0 };
 let settings = parseSettings(location.hash),
   sim = new Simulation(settings),
   bio: ReactionDiffusion | null = null;
 let paused = matchMedia("(prefers-reduced-motion: reduce)").matches,
-  viewScale = 1,
-  viewX = 0,
-  viewY = 0,
   pulseUntil = 0;
 let feed = 0.0545,
   kill = 0.062,
@@ -44,6 +46,7 @@ let pointer: { x: number; y: number; repel: boolean } | undefined;
 let brushErase = false,
   brushRadius = 5,
   lastPaint: { x: number; y: number } | undefined;
+let importRequest = 0;
 let importedSnapshot = false,
   showAgents = true;
 let pendingResize = false,
@@ -106,6 +109,11 @@ function isNetwork() {
 function isFieldMode() {
   return isBio() || isNetwork();
 }
+function renderSource(): RenderSource {
+  if (bio) return { kind: "reaction", model: bio };
+  if (network) return { kind: "network", model: network, showAgents };
+  return { kind: "particles", model: sim };
+}
 function currentTime() {
   return bio?.time ?? network?.time ?? sim.time;
 }
@@ -146,62 +154,20 @@ function resize() {
     pendingResize = true;
     return;
   }
-  const r = canvas.getBoundingClientRect(),
+  const rect = canvas.getBoundingClientRect(),
     dpr = Math.min(devicePixelRatio, 2);
-  canvas.width = Math.round(r.width * dpr);
-  canvas.height = Math.round(r.height * dpr);
-  viewScale = Math.min(canvas.width / 1200, canvas.height / 760);
-  viewX = (canvas.width - 1200 * viewScale) / 2;
-  viewY = (canvas.height - 760 * viewScale) / 2;
+  canvas.width = Math.round(rect.width * dpr);
+  canvas.height = Math.round(rect.height * dpr);
+  const domain = getDomain(renderSource());
+  view = fitView(canvas.width, canvas.height, domain.width, domain.height);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.fillStyle = "#070f14";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.setTransform(viewScale, 0, 0, viewScale, viewX, viewY);
+  ctx.setTransform(view.scale, 0, 0, view.scale, view.x, view.y);
   draw(true);
 }
 function draw(clear = false) {
-  const field = bio ?? network;
-  if (field) {
-    field.pixels(fieldImage.data, palette);
-    imageContext.putImageData(fieldImage, 0, 0);
-    ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(imageCanvas, 0, 0, 1200, 760);
-    if (network && showAgents) {
-      ctx.globalCompositeOperation = "screen";
-      ctx.globalAlpha = 0.65;
-      ctx.fillStyle = palette === "ember" ? "#ffe6bd" : "#d6fff3";
-      for (let i = 0; i < network.settings.count; i++)
-        ctx.fillRect(
-          (network.x[i] / 256) * 1200,
-          (network.y[i] / 160) * 760,
-          1.25,
-          1.25,
-        );
-      ctx.globalAlpha = 1;
-      ctx.globalCompositeOperation = "source-over";
-    }
-  } else {
-    ctx.fillStyle = clear ? "#070f14" : "rgba(7,15,20,.15)";
-    ctx.fillRect(0, 0, 1200, 760);
-    const colors =
-      palette === "ember"
-        ? ["#ffaf6e", "#f2745d", "#ffe0aa"]
-        : palette === "mono"
-          ? ["#edfaff", "#abc5d7", "#7994ac"]
-          : ["#d9f87e", "#70ded7", "#e8bb8e"];
-    ctx.globalCompositeOperation = "lighter";
-    for (let c = 0; c < 3; c++) {
-      ctx.beginPath();
-      ctx.strokeStyle = colors[c];
-      ctx.lineWidth = 1.6;
-      for (let i = c; i < settings.count; i += 3) {
-        ctx.moveTo(sim.x[i], sim.y[i]);
-        ctx.lineTo(sim.x[i] - sim.vx[i] * 3.5, sim.y[i] - sim.vy[i] * 3.5);
-      }
-      ctx.stroke();
-    }
-    ctx.globalCompositeOperation = "source-over";
-  }
+  renderer.paint(ctx, renderSource(), palette, clear);
   $("step-count").textContent = String(currentTime());
 }
 function sync() {
@@ -261,6 +227,7 @@ function sync() {
   $<HTMLInputElement>("show-agents").checked = showAgents;
 }
 function reset() {
+  importRequest++;
   importedSnapshot = false;
   sim = new Simulation(settings);
   bio = isBio()
@@ -271,17 +238,19 @@ function reset() {
   if (network) network.step(120);
   pointer = undefined;
   pulseUntil = 0;
-  draw(true);
+  resize();
   sync();
 }
 for (const key of ["count", "speed", "cohesion", "separation"] as const)
   $(key).addEventListener("input", () => {
+    importRequest++;
     settings[key] = Number($<HTMLInputElement>(key).value);
     if (key === "count") reset();
     else sync();
   });
 for (const [id, key] of Object.entries(networkKeys))
   $(id).addEventListener("input", () => {
+    importRequest++;
     networkSettings[key] = Number($<HTMLInputElement>(id).value);
     if (key === "count") reset();
     else {
@@ -291,6 +260,7 @@ for (const [id, key] of Object.entries(networkKeys))
   });
 for (const key of ["feed", "kill", "rate"])
   $(key).addEventListener("input", () => {
+    importRequest++;
     const v = Number($<HTMLInputElement>(key).value);
     if (key === "feed") feed = v;
     else if (key === "kill") kill = v;
@@ -335,6 +305,7 @@ $("seed").addEventListener("change", () => {
   reset();
 });
 $("pulse").onclick = () => {
+  importRequest++;
   const field = bio ?? network;
   if (field) {
     field.inject(128, 80, brushErase, brushRadius);
@@ -353,6 +324,7 @@ $("pulse").onclick = () => {
   }
 };
 $("step").onclick = () => {
+  importRequest++;
   paused = true;
   if (bio) bio.step(feed, kill, bioSpeed);
   else if (network) network.step();
@@ -361,10 +333,12 @@ $("step").onclick = () => {
   sync();
 };
 $("show-agents").onchange = () => {
+  importRequest++;
   showAgents = $<HTMLInputElement>("show-agents").checked;
   draw(true);
 };
 $("palette").onchange = () => {
+  importRequest++;
   palette = $<HTMLSelectElement>("palette").value as typeof palette;
   draw(true);
 };
@@ -384,14 +358,40 @@ function download(blob: Blob, name: string) {
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-$("save").onclick = () =>
-  canvas.toBlob((blob) => {
+$("save").onclick = () => {
+  const filename = `emergence-${settings.preset}-${settings.seed}.png`;
+  const requestedWidth = Number($<HTMLSelectElement>("export-width").value);
+  let output = canvas;
+  if (requestedWidth === 1920 || requestedWidth === 3840) {
+    const source = renderSource(),
+      domain = getDomain(source);
+    output = document.createElement("canvas");
+    output.width = requestedWidth;
+    output.height = Math.round((requestedWidth * domain.height) / domain.width);
+    const context = output.getContext("2d");
+    if (!context) {
+      report("无法创建导出画布。");
+      return;
+    }
+    context.fillStyle = "#070f14";
+    context.fillRect(0, 0, output.width, output.height);
+    const scale = output.width / domain.width;
+    context.setTransform(scale, 0, 0, scale, 0, 0);
+    renderer.paint(context, source, palette, true);
+  }
+  output.toBlob((blob) => {
     if (blob) {
-      download(blob, `emergence-${settings.preset}-${settings.seed}.png`);
-      report("当前画面已导出 PNG。");
+      download(blob, filename);
+      report(
+        requestedWidth
+          ? `已导出宽 ${requestedWidth} 像素的 PNG。`
+          : "当前画布已导出 PNG。",
+      );
     } else report("导出失败，请重试。");
   });
+};
 $("record").onclick = () => {
+  importRequest++;
   if (capture.state === "recording") capture.stop();
   else if (capture.state === "idle")
     capture.start(`emergence-${settings.preset}`);
@@ -408,6 +408,7 @@ function checkpoint(): Snapshot {
     return {
       ...common,
       kind: "network",
+      showAgents,
       width: 256,
       height: 160,
       network: { ...network.settings },
@@ -457,12 +458,15 @@ $("checkpoint-file").addEventListener("change", async () => {
     file = input.files?.[0];
   input.value = "";
   if (!file) return;
+  const request = ++importRequest;
   if (file.size > MAX_SNAPSHOT_BYTES) {
     report("文件超过 3 MB，请选择本实验室导出的快照。");
     return;
   }
   try {
-    const restored = decodeSnapshot(await file.text());
+    const text = await file.text();
+    if (request !== importRequest) return;
+    const restored = decodeSnapshot(text);
     // Build a replacement model completely before touching the running state.
     const nextSim = new Simulation(restored.settings);
     let nextBio: ReactionDiffusion | null = null;
@@ -495,7 +499,10 @@ $("checkpoint-file").addEventListener("change", async () => {
     sim = nextSim;
     bio = nextBio;
     network = nextNetwork;
-    if (restored.kind === "network") networkSettings = { ...restored.network };
+    if (restored.kind === "network") {
+      networkSettings = { ...restored.network };
+      showAgents = restored.showAgents;
+    }
     palette = restored.palette;
     if (restored.kind === "reaction") {
       feed = restored.feed;
@@ -511,10 +518,11 @@ $("checkpoint-file").addEventListener("change", async () => {
     const cleanUrl = new URL(location.href);
     cleanUrl.hash = "";
     history.replaceState(null, "", cleanUrl);
-    draw(true);
+    resize();
     sync();
     report(`已恢复第 ${restored.time} 步并暂停。点击继续实验即可接着演化。`);
   } catch (error) {
+    if (request !== importRequest) return;
     report(
       error instanceof Error ? error.message : "快照读取失败；当前实验未改变。",
     );
@@ -578,29 +586,30 @@ window.addEventListener("hashchange", () => {
   reset();
 });
 function updatePointer(e: PointerEvent) {
-  const r = canvas.getBoundingClientRect();
-  pointer = {
-    x: (((e.clientX - r.left) * canvas.width) / r.width - viewX) / viewScale,
-    y: (((e.clientY - r.top) * canvas.height) / r.height - viewY) / viewScale,
-    repel: e.buttons > 0,
-  };
-  if (
-    (bio || network) &&
-    e.buttons &&
-    pointer.x >= 0 &&
-    pointer.x < 1200 &&
-    pointer.y >= 0 &&
-    pointer.y < 760
-  ) {
-    const point = { x: (pointer.x / 1200) * 256, y: (pointer.y / 760) * 160 };
-    const from = lastPaint ?? point,
-      distance = Math.hypot(point.x - from.x, point.y - from.y);
-    const count = Math.min(
-      128,
-      Math.max(1, Math.ceil(distance / Math.max(1, brushRadius * 0.5))),
-    );
+  const rect = canvas.getBoundingClientRect();
+  const position = pointToDomain(
+    view,
+    ((e.clientX - rect.left) * canvas.width) / rect.width,
+    ((e.clientY - rect.top) * canvas.height) / rect.height,
+  );
+  if (!position.inside) {
+    pointer = undefined;
+    lastPaint = undefined;
+    return;
+  }
+  pointer = { x: position.x, y: position.y, repel: e.buttons > 0 };
+  const field = bio ?? network;
+  if (field && e.buttons) {
+    importRequest++;
+    const point = { x: position.x, y: position.y },
+      from = lastPaint ?? point;
+    const distance = Math.hypot(point.x - from.x, point.y - from.y),
+      count = Math.min(
+        128,
+        Math.max(1, Math.ceil(distance / Math.max(1, brushRadius * 0.5))),
+      );
     for (let i = 1; i <= count; i++)
-      (bio ?? network)!.inject(
+      field.inject(
         from.x + ((point.x - from.x) * i) / count,
         from.y + ((point.y - from.y) * i) / count,
         brushErase || e.shiftKey,
@@ -632,6 +641,7 @@ canvas.addEventListener("pointercancel", () => {
   lastPaint = undefined;
 });
 document.addEventListener("keydown", (e) => {
+  if (document.activeElement !== canvas) return;
   const target = e.target as HTMLElement;
   if (
     target.closest("input,select,textarea,button,summary,a") ||
@@ -662,35 +672,43 @@ let last = performance.now(),
   frames = 0,
   fpsStart = last;
 function frame(now: number) {
-  const elapsed = Math.min(now - last, 100);
-  last = now;
-  if (!paused && !document.hidden) {
-    acc += elapsed;
-    let steps = 0;
-    const cap = isFieldMode() ? 2 : 5;
-    while (acc >= 1000 / 60 && steps < cap) {
-      if (bio) bio.step(feed, kill, bioSpeed);
-      else if (network) network.step();
-      else
-        sim.step(
-          pointer ??
-            (sim.time < pulseUntil
-              ? { x: 600, y: 380, repel: true }
-              : undefined),
-        );
-      acc -= 1000 / 60;
-      steps++;
+  try {
+    const elapsed = Math.min(now - last, 100);
+    last = now;
+    if (!paused && !document.hidden) {
+      acc += elapsed;
+      let steps = 0;
+      const cap = isFieldMode() ? 2 : 5;
+      while (acc >= 1000 / 60 && steps < cap) {
+        if (bio) bio.step(feed, kill, bioSpeed);
+        else if (network) network.step();
+        else
+          sim.step(
+            pointer ??
+              (sim.time < pulseUntil
+                ? { x: 600, y: 380, repel: true }
+                : undefined),
+          );
+        acc -= 1000 / 60;
+        steps++;
+      }
+      if (steps === cap) acc = Math.min(acc, 1000 / 60);
+      if (steps) draw();
+      frames++;
+    } else acc = 0;
+    if (now - fpsStart >= 1000) {
+      $("fps").textContent = paused
+        ? "PAUSED"
+        : `${Math.round((frames * 1000) / (now - fpsStart))} FPS`;
+      frames = 0;
+      fpsStart = now;
     }
-    if (steps === cap) acc = Math.min(acc, 1000 / 60);
-    if (steps) draw();
-    frames++;
-  } else acc = 0;
-  if (now - fpsStart >= 1000) {
-    $("fps").textContent = paused
-      ? "PAUSED"
-      : `${Math.round((frames * 1000) / (now - fpsStart))} FPS`;
-    frames = 0;
-    fpsStart = now;
+  } catch (error) {
+    paused = true;
+    acc = 0;
+    sync();
+    report("模拟遇到无效状态，已暂停。可以重新开始或打开有效快照。");
+    console.error("Simulation paused after an invalid state", error);
   }
   requestAnimationFrame(frame);
 }

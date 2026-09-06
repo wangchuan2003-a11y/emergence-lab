@@ -20,4 +20,12 @@ Added a sixth mode with three-sensor chemotaxis and diffusing/decaying trail fee
 
 Default-pattern review rejected a collapse-to-single-band prototype. A disclosed saturating sensor response and stateless split rule now produce the actual network comparison captured in physarum-evolution.png. This remains an independent engineering model rather than a precise Jones (2010) reproduction.
 
-Core validation: 61 tests passed locally, including steering, independent stencil/quantity checks, seeded continuation and imported network checkpoints. Browser and deployment results pending this iteration's CI.
+Core validation: 61 tests passed locally, including steering, independent stencil/quantity checks, seeded continuation and imported network checkpoints. Browser and deployment checks succeeded in GitHub Actions run 34045241950 for cdb069b (14 browser cases).
+
+## 2026-09-07 · Native rendering and safe asynchronous actions
+
+Added a reusable renderer that works in each model's native coordinate system. This removes the small 256×160 → 1200×760 aspect mismatch, aligns painting with the displayed domain and supports 1920/3840-pixel PNG exports without viewport letterboxing. Larger image output does not add simulation cells or scientific detail.
+
+The export filename is captured before asynchronous PNG encoding. Checkpoint reads use a request sequence so a stale read cannot replace a later scene choice/import. Keyboard shortcuts now require actual canvas focus. Network checkpoints include the agent overlay setting and reject coordinates that become out-of-domain after Float32 conversion. Unexpected numerical errors pause the model while keeping the animation scheduler and reset controls available.
+
+Core checks: 68 passed locally including fit/inverse mapping and Float32 import regressions. Added browser cases for PNG dimensions and filename races, stale import reads, body keyboard behavior and overlay restoration. CI/deployment status pending.

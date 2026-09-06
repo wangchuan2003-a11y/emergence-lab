@@ -9,6 +9,7 @@
     "src/reaction.ts",
     "src/snapshot.ts",
     "src/capture.ts",
-    "src/physarum.ts"
+    "src/physarum.ts",
+    "src/render.ts"
   ]
 }

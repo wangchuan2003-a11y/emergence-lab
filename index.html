@@ -261,7 +261,14 @@
               >
             </div>
             <div class="secondary-actions">
-              <button id="save">保存画面 ↗</button
+              <label class="export-size" for="export-width"
+                >PNG
+                <select id="export-width">
+                  <option value="0">屏幕原样</option>
+                  <option value="1920">1920 px</option>
+                  <option value="3840">3840 px</option>
+                </select></label
+              ><button id="save">保存画面 ↗</button
               ><button id="share">分享参数 ↗</button>
             </div>
             <div class="seed-row">
@@ -295,6 +302,10 @@
                 文件包含模拟状态与参数，完全在本机读取。导入失败会保留当前实验。
               </p>
             </details>
+            <p class="note">
+              高清 PNG
+              保持模型比例、去除留边；输出像素增加，不提高模拟网格精度。
+            </p>
             <p class="note" id="keyboard-help">
               聚焦画布后：空格暂停，右方向键单步。<br />触屏可在画布绘制，在画布外滚动页面。
             </p>

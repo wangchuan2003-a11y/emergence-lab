@@ -129,3 +129,39 @@ test("network snapshot preserves agent headings and trail feedback", async () =>
   broken.field[0] = -1;
   assert.throws(() => encodeSnapshot(broken));
 });
+
+test("coordinates that round onto an exclusive Float32 boundary are rejected", async () => {
+  const { Physarum, networkDefaults } =
+    await import("../.test-build/physarum.js");
+  const model = new Physarum(42, { ...networkDefaults, count: 500 });
+  const state = {
+    format: "emergence-lab",
+    version: 1,
+    kind: "network",
+    settings: { ...defaults, preset: "physarum" },
+    palette: "lagoon",
+    time: 0,
+    width: 256,
+    height: 160,
+    network: { ...model.settings },
+    x: Array.from(model.x),
+    y: Array.from(model.y),
+    heading: Array.from(model.heading),
+    field: Array.from(model.field),
+    showAgents: false,
+  };
+  const x = structuredClone(state);
+  x.x[0] = 255.999999;
+  assert.throws(() => encodeSnapshot(x));
+  const y = structuredClone(state);
+  y.y[0] = 159.999999;
+  assert.throws(() => encodeSnapshot(y));
+  assert.equal(decodeSnapshot(encodeSnapshot(state)).showAgents, false);
+  delete state.showAgents;
+  assert.equal(decodeSnapshot(JSON.stringify(state)).showAgents, true);
+  const particle = particleSnapshot(
+    new Simulation({ ...defaults, count: 100 }),
+  );
+  particle.x[0] = 1199.99999;
+  assert.throws(() => encodeSnapshot(particle));
+});

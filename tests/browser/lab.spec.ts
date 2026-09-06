@@ -184,3 +184,85 @@ test("network settings, drawing, single step and checkpoint roundtrip", async ({
   await expect(page.locator("#state")).toHaveText("运行中");
   expect(errors).toEqual([]);
 });
+
+test("high resolution PNG preserves domain aspect and locks its filename", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/#preset=coral&seed=91");
+  await page.locator("#export-width").selectOption("1920");
+  await page.evaluate(() => {
+    const original = HTMLCanvasElement.prototype.toBlob;
+    HTMLCanvasElement.prototype.toBlob = function (callback, type, quality) {
+      original.call(
+        this,
+        (blob) => setTimeout(() => callback(blob), 150),
+        type,
+        quality,
+      );
+    };
+  });
+  const pending = page.waitForEvent("download");
+  await page.locator("#save").click();
+  await page.locator('[data-preset="orbit"]').click();
+  const image = await pending;
+  expect(image.suggestedFilename()).toBe("emergence-coral-91.png");
+  const { readFile } = await import("node:fs/promises");
+  const bytes = await readFile((await image.path())!);
+  expect(bytes.readUInt32BE(16)).toBe(1920);
+  expect(bytes.readUInt32BE(20)).toBe(1200);
+});
+
+test("a delayed checkpoint cannot overwrite a later scene choice", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/#preset=coral");
+  await page.locator(".checkpoint-panel summary").click();
+  const pending = page.waitForEvent("download");
+  await page.locator("#checkpoint-save").click();
+  const path = await (await pending).path();
+  const { readFile } = await import("node:fs/promises");
+  const bytes = await readFile(path!);
+  await page.evaluate(() => {
+    const original = File.prototype.text;
+    File.prototype.text = function () {
+      const file = this;
+      return new Promise<string>((resolve) => {
+        (
+          window as unknown as { finishCheckpointRead: () => Promise<void> }
+        ).finishCheckpointRead = () => original.call(file).then(resolve);
+      });
+    };
+  });
+  await page.locator("#checkpoint-file").setInputFiles({
+    name: "slow.json",
+    mimeType: "application/json",
+    buffer: bytes,
+  });
+  await page.locator('[data-preset="orbit"]').click();
+  await page.evaluate(() =>
+    (
+      window as unknown as { finishCheckpointRead: () => Promise<void> }
+    ).finishCheckpointRead(),
+  );
+  await expect(page.locator("#scene-title")).toHaveText("围绕一个未知");
+  await expect(page.locator("#state")).toHaveText("已暂停");
+});
+
+test("body space is not an experiment shortcut and particle overlay survives checkpoints", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/#preset=physarum");
+  await page.keyboard.press("Space");
+  await expect(page.locator("#state")).toHaveText("已暂停");
+  await page.locator("#show-agents").uncheck();
+  await page.locator(".checkpoint-panel summary").click();
+  const pending = page.waitForEvent("download");
+  await page.locator("#checkpoint-save").click();
+  const path = await (await pending).path();
+  await page.locator("#show-agents").check();
+  await page.locator("#checkpoint-file").setInputFiles(path!);
+  await expect(page.locator("#show-agents")).not.toBeChecked();
+});

@@ -29,6 +29,7 @@ export interface ReactionSnapshot extends CommonSnapshot {
 }
 export interface NetworkSnapshot extends CommonSnapshot {
   kind: "network";
+  showAgents: boolean;
   width: 256;
   height: 160;
   network: NetworkSettings;
@@ -116,6 +117,8 @@ export function decodeSnapshot(text: string): Snapshot {
     time: input.time,
   };
   if (input.kind === "network") {
+    if (input.showAgents !== undefined && typeof input.showAgents !== "boolean")
+      throw new Error("快照粒子显示设置无效。");
     const n = input.network;
     if (
       common.settings.preset !== "physarum" ||
@@ -132,8 +135,8 @@ export function decodeSnapshot(text: string): Snapshot {
     if (
       !array(input.x, n.count, 0, 256) ||
       !array(input.y, n.count, 0, 160) ||
-      input.x.some((v) => v >= 256) ||
-      input.y.some((v) => v >= 160) ||
+      input.x.some((v) => Math.fround(v) >= 256) ||
+      input.y.some((v) => Math.fround(v) >= 160) ||
       !array(input.heading, n.count, 0, Math.fround(Math.PI * 2)) ||
       !array(input.field, 40960, 0, 3.4028234663852886e38)
     )
@@ -141,6 +144,7 @@ export function decodeSnapshot(text: string): Snapshot {
     return {
       ...common,
       kind: "network",
+      showAgents: input.showAgents === undefined ? true : input.showAgents,
       width: 256,
       height: 160,
       network: {
@@ -188,8 +192,8 @@ export function decodeSnapshot(text: string): Snapshot {
       !array(input.y, s.count, 0, 760) ||
       !array(input.vx, s.count, -6.001, 6.001) ||
       !array(input.vy, s.count, -6.001, 6.001) ||
-      input.x.some((v) => v >= 1200) ||
-      input.y.some((v) => v >= 760)
+      input.x.some((v) => Math.fround(v) >= 1200) ||
+      input.y.some((v) => Math.fround(v) >= 760)
     )
       throw new Error("粒子数据损坏、数量不一致或位置超出范围。");
     return {
