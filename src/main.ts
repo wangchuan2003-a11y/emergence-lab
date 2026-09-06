@@ -1,4 +1,5 @@
 import "./style.css";
+import { translate, applyTranslations, type Language } from "./i18n";
 import {
   createRenderer,
   getDomain,
@@ -31,6 +32,10 @@ const networkKeys = {
   retention: "retention",
 } as const;
 $("network-controls").after($("brush-controls"));
+let language: Language =
+  new URLSearchParams(location.hash.slice(1)).get("lang") === "en"
+    ? "en"
+    : "zh";
 const renderer = createRenderer();
 let view: View = { scale: 0, x: 0, y: 0, width: 0, height: 0 };
 let settings = parseSettings(location.hash),
@@ -70,12 +75,13 @@ const capture = createCaptureController(canvas, {
         "[data-preset], #seed, #reset, #new-seed, #count, #checkpoint-load, #fullscreen, #network-count",
       )
       .forEach((control) => (control.disabled = busy));
-    $("record").textContent =
+    $("record").textContent = tr(
       state === "recording"
         ? "停止并保存"
         : state === "stopping"
           ? "正在保存…"
-          : "录制 8 秒";
+          : "录制 8 秒",
+    );
     $<HTMLButtonElement>("record").disabled = state === "stopping";
     $("record-progress").textContent =
       state === "recording" ? `${secondsLeft}s` : "";
@@ -85,6 +91,7 @@ const capture = createCaptureController(canvas, {
         settings = parseSettings(location.hash);
         readBioHash();
         reset();
+        applyLanguage();
       }
       if (pendingResize) {
         pendingResize = false;
@@ -100,8 +107,46 @@ document.querySelector<HTMLAnchorElement>(".skip-link")!.onclick = (event) => {
   canvas.focus();
   canvas.scrollIntoView({ block: "center" });
 };
+function tr(text: string, values: Record<string, string | number> = {}) {
+  return translate(text, language, values);
+}
+function applyLanguage() {
+  document.documentElement.lang = language === "en" ? "en" : "zh-CN";
+  applyTranslations(document, language);
+  $("language-toggle").textContent = language === "en" ? "中文" : "EN";
+  $("language-toggle").setAttribute(
+    "aria-label",
+    language === "en" ? "Switch to Chinese" : "切换为英文",
+  );
+  const lead = document.querySelector<HTMLElement>("h1>.i18n-fragment");
+  if (lead && language === "en") lead.append(" ");
+  if (language === "en")
+    document
+      .querySelectorAll(".intro p>.i18n-fragment")
+      .forEach((node, index) => {
+        if (index) node.prepend(" ");
+      });
+  sync();
+  $("record").textContent = tr(
+    capture.state === "recording"
+      ? "停止并保存"
+      : capture.state === "stopping"
+        ? "正在保存…"
+        : "录制 8 秒",
+  );
+}
+$("language-toggle").onclick = () => {
+  language = language === "zh" ? "en" : "zh";
+  const url = new URL(location.href),
+    params = new URLSearchParams(url.hash.slice(1));
+  if (language === "en") params.set("lang", "en");
+  else params.delete("lang");
+  url.hash = params.toString();
+  history.replaceState(null, "", url);
+  applyLanguage();
+};
 function report(s: string) {
-  $("status").textContent = s;
+  $("status").textContent = tr(s);
 }
 function isNetwork() {
   return settings.preset === "physarum";
@@ -122,6 +167,7 @@ function isBio() {
 }
 function readBioHash() {
   const q = new URLSearchParams(location.hash.slice(1));
+  language = q.get("lang") === "en" ? "en" : "zh";
   const bounded = (key: string, fallback: number, min: number, max: number) => {
     const s = q.get(key),
       n = s === null ? NaN : Number(s);
@@ -184,11 +230,12 @@ function sync() {
         String(b.dataset.preset === settings.preset),
       ),
     );
-  $("scene-title").textContent = scenes[settings.preset][0];
-  $("scene-caption").textContent = scenes[settings.preset][1];
-  $("pause").textContent = paused ? "继续实验" : "暂停实验";
-  $("stage-pause").textContent = paused ? "继续" : "暂停";
-  $("state").textContent = paused ? "已暂停" : "运行中";
+  $("scene-title").textContent = tr(scenes[settings.preset][0]);
+  $("scene-caption").textContent = tr(scenes[settings.preset][1]);
+  $("pause").textContent = tr(paused ? "继续实验" : "暂停实验");
+  $("stage-pause").textContent = tr(paused ? "继续" : "暂停");
+  $("state").textContent = tr(paused ? "已暂停" : "运行中");
+  if (paused) $("fps").textContent = "PAUSED";
   document.querySelector(".live")?.classList.toggle("paused", paused);
   canvas.classList.toggle("drawing-enabled", isFieldMode());
   $("particle-controls").hidden = isFieldMode();
@@ -204,17 +251,17 @@ function sync() {
         : String(value) +
           (key === "sensorAngle" || key === "turnAngle" ? "°" : "");
   }
-  $("pointer-hint").textContent = isFieldMode()
-    ? "按住播种 · Shift 按住擦除"
-    : "移动吸引 · 按住排斥";
+  $("pointer-hint").textContent = tr(
+    isFieldMode() ? "按住播种 · Shift 按住擦除" : "移动吸引 · 按住排斥",
+  );
   $("model-name").textContent = isNetwork()
     ? "TRAIL NETWORK"
     : isBio()
       ? "GRAY–SCOTT"
       : "PARTICLE SYSTEM";
-  $("checkpoint-state").textContent = importedSnapshot
-    ? "已恢复快照 · 暂停后继续"
-    : "保存当前状态，稍后接着演化";
+  $("checkpoint-state").textContent = tr(
+    importedSnapshot ? "已恢复快照，可继续演化" : "保存当前状态，稍后接着演化",
+  );
   for (const [id, v] of [
     ["feed", feed],
     ["kill", kill],
@@ -384,7 +431,7 @@ $("save").onclick = () => {
       download(blob, filename);
       report(
         requestedWidth
-          ? `已导出宽 ${requestedWidth} 像素的 PNG。`
+          ? tr("已导出宽 {width} 像素的 PNG。", { width: requestedWidth })
           : "当前画布已导出 PNG。",
       );
     } else report("导出失败，请重试。");
@@ -516,11 +563,15 @@ $("checkpoint-file").addEventListener("change", async () => {
     paused = true;
     importedSnapshot = true;
     const cleanUrl = new URL(location.href);
-    cleanUrl.hash = "";
+    cleanUrl.hash = language === "en" ? "lang=en" : "";
     history.replaceState(null, "", cleanUrl);
     resize();
     sync();
-    report(`已恢复第 ${restored.time} 步并暂停。点击继续实验即可接着演化。`);
+    report(
+      tr("已恢复第 {step} 步并暂停。点击继续实验即可接着演化。", {
+        step: restored.time,
+      }),
+    );
   } catch (error) {
     if (request !== importRequest) return;
     report(
@@ -552,6 +603,7 @@ $("brush-radius").addEventListener("input", () => {
 $("share").onclick = async () => {
   const url = new URL(location.href);
   const q = new URLSearchParams(serialize(settings));
+  if (language === "en") q.set("lang", "en");
   q.set("palette", palette);
   if (bio) {
     q.set("feed", String(feed));
@@ -584,6 +636,7 @@ window.addEventListener("hashchange", () => {
   settings = parseSettings(location.hash);
   readBioHash();
   reset();
+  applyLanguage();
 });
 function updatePointer(e: PointerEvent) {
   const rect = canvas.getBoundingClientRect();
@@ -665,6 +718,7 @@ window.addEventListener("pagehide", (event) => {
 });
 readBioHash();
 reset();
+applyLanguage();
 new ResizeObserver(resize).observe(canvas);
 resize();
 let last = performance.now(),

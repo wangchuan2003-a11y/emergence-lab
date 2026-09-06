@@ -1018,3 +1018,87 @@ aside {
 .secondary-actions:has(.export-size) .export-size {
   flex-basis: 100%;
 }
+#language-toggle {
+  border: 1px solid #45665d;
+  border-radius: 5px;
+  background: transparent;
+  color: #c9e6dc;
+  min-width: 38px;
+  min-height: 32px;
+  padding: 5px 8px;
+  font:
+    11px "Lab Mono",
+    monospace;
+  flex-shrink: 0;
+}
+.presets button .i18n-fragment {
+  display: inline;
+  color: inherit;
+  font: inherit;
+  margin: 0;
+}
+.intro h1 > .i18n-fragment {
+  color: inherit;
+}
+.i18n-fragment {
+  font: inherit;
+  color: inherit;
+}
+[lang="en"] .presets small {
+  display: none;
+}
+[lang="en"] .intro h1 {
+  max-width: 12ch;
+  line-height: 1.1;
+}
+[lang="en"] .stage-caption h2 {
+  max-width: 22ch;
+}
+[lang="en"] .seed-row {
+  flex-wrap: wrap;
+}
+[lang="en"] .stage-bottom #pointer-hint {
+  max-width: 230px;
+  line-height: 1.4;
+}
+@media (max-width: 720px) {
+  header {
+    gap: 14px;
+  }
+  .source {
+    margin-left: 0;
+  }
+  #language-toggle {
+    margin-left: auto;
+    min-width: 35px;
+  }
+  [lang="en"] .stage-bottom #pointer-hint {
+    max-width: 105px;
+    font-size: 9px;
+  }
+  [lang="en"] .intro h1 {
+    font-size: 42px;
+    max-width: 12ch;
+  }
+}
+.palette-row > span {
+  display: inline-flex;
+  gap: 5px;
+  align-items: baseline;
+}
+.palette-row > span > .i18n-fragment {
+  margin-left: 0;
+}
+.brush-tools label {
+  gap: 5px;
+}
+[lang="en"] .intro h1 {
+  max-width: 16ch;
+  font-size: clamp(36px, 4vw, 58px);
+}
+@media (max-width: 720px) {
+  [lang="en"] .intro h1 {
+    font-size: 40px;
+    max-width: 16ch;
+  }
+}

@@ -92,3 +92,7 @@ MIT. Manrope and JetBrains Mono are self-hosted under their included SIL Open Fo
 PNG 可选择屏幕原样、1920 px 或 3840 px。高清模式按模型的原始比例重新绘制，去掉留边；它增加输出像素，不提高模拟网格精度。粒子高清重绘不包含过去帧的屏幕拖尾，因此需要保留屏幕原样时选择第一项。PNG 文件名在点击时固定，不受编码期间切换场景影响。
 
 快照导入会尊重较新的操作：读取途中切换场景或重新选择文件，旧读取结果不会覆盖新实验。网络快照同时保留粒子叠加开关；旧快照缺少该字段时默认显示。
+
+### English interface
+
+Use **EN** in the header or open [the English lab](https://wangchuan2003-a11y.github.io/emergence-lab/#preset=coral&lang=en). Switching languages preserves the running model and numerical step. Shared settings include language; scientific states and checkpoint files are independent of UI language.

@@ -28,4 +28,10 @@ Added a reusable renderer that works in each model's native coordinate system. T
 
 The export filename is captured before asynchronous PNG encoding. Checkpoint reads use a request sequence so a stale read cannot replace a later scene choice/import. Keyboard shortcuts now require actual canvas focus. Network checkpoints include the agent overlay setting and reject coordinates that become out-of-domain after Float32 conversion. Unexpected numerical errors pause the model while keeping the animation scheduler and reset controls available.
 
-Core checks: 68 passed locally including fit/inverse mapping and Float32 import regressions. Added browser cases for PNG dimensions and filename races, stale import reads, body keyboard behavior and overlay restoration. CI/deployment status pending.
+Core checks: 68 passed locally including fit/inverse mapping and Float32 import regressions. Added browser cases for PNG dimensions and filename races, stale import reads, body keyboard behavior and overlay restoration. GitHub Actions run 34046006958 passed and deployed 2f3e9c9, including 20 browser cases.
+
+## 2026-09-07 · English interface
+
+Added an EN/中文 switch with source-key translations for static controls, dynamic status messages, scientific descriptions, tooltips and accessibility labels. Language selection updates URL settings without resetting the model; sharing includes the current language. Recording controls keep their live state across a language switch. The simulation and snapshot data are language-independent.
+
+The translation dictionary is coverage-checked against the marked HTML and snapshot/capture errors. English desktop and phone layouts were manually inspected; browser regression cases check language/state preservation and switching during recording. Core suite: 73 passed locally; CI/deployment pending.

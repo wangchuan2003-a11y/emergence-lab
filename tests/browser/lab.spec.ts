@@ -266,3 +266,53 @@ test("body space is not an experiment shortcut and particle overlay survives che
   await page.locator("#checkpoint-file").setInputFiles(path!);
   await expect(page.locator("#show-agents")).not.toBeChecked();
 });
+
+test("English interface switches without resetting the model and shares its language", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/#preset=physarum&networkCount=1000&lang=en");
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  await expect(page.locator("#scene-title")).toHaveText("Trails that remember");
+  await expect(page.locator(".intro p")).toContainText(/forms\.\s+Seed/);
+  await expect(page.locator("#state")).toHaveText("Paused");
+  await expect(page.locator("#step-count")).toHaveText("120");
+  const visibleText = (await page.locator("body").innerText()).replaceAll(
+    "中文",
+    "",
+  );
+  expect(/[\u3400-\u9fff]/.test(visibleText)).toBe(false);
+  await page.locator("#language-toggle").click();
+  await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
+  await expect(page.locator("#scene-title")).toHaveText("路径，记住了来者");
+  await page.locator("#step").click();
+  await page.locator("#language-toggle").click();
+  await expect(page.locator("#step-count")).toHaveText("121");
+  await expect(page.locator("#state")).toHaveText("Paused");
+  await page.locator("#share").click();
+  await expect(page).toHaveURL(/lang=en/);
+  await expect(page.locator("#status")).not.toHaveText(/[\u3400-\u9fff]/);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+});
+
+test("language switch during recording preserves the capture lifecycle", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/#preset=coral&lang=en");
+  const pending = page.waitForEvent("download");
+  await page.locator("#record").click();
+  await page.locator("#language-toggle").click();
+  await expect(page.locator("#record")).toHaveText("停止并保存");
+  await expect(page.locator("#reset")).toBeDisabled();
+  await page.locator("#step").click();
+  await page.locator("#record").click();
+  expect((await pending).suggestedFilename()).toMatch(
+    /emergence-coral\.(webm|mp4)/,
+  );
+  await expect(page.locator("#reset")).toBeEnabled();
+});

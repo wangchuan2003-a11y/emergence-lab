@@ -10,6 +10,7 @@
     "src/snapshot.ts",
     "src/capture.ts",
     "src/physarum.ts",
-    "src/render.ts"
+    "src/render.ts",
+    "src/i18n.ts"
   ]
 }

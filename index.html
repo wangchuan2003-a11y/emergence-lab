@@ -8,21 +8,34 @@
       name="description"
       content="改变简单规则，亲手创造复杂秩序。一个开源、可复现的交互式粒子涌现实验室。"
     />
-    <title>Emergence Lab · 涌现实验室</title>
+    <title data-i18n="Emergence Lab · 涌现实验室">
+      Emergence Lab · 涌现实验室
+    </title>
     <link
       rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23111718'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%23d9f87e' stroke-width='5'/%3E%3Ccircle cx='32' cy='32' r='5' fill='%23d9f87e'/%3E%3C/svg%3E"
+      href="data:image/svg+xml,%3Csvg xmlns=&#x27;http://www.w3.org/2000/svg&#x27; viewBox=&#x27;0 0 64 64&#x27;%3E%3Crect width=&#x27;64&#x27; height=&#x27;64&#x27; rx=&#x27;16&#x27; fill=&#x27;%23111718&#x27;/%3E%3Ccircle cx=&#x27;32&#x27; cy=&#x27;32&#x27; r=&#x27;18&#x27; fill=&#x27;none&#x27; stroke=&#x27;%23d9f87e&#x27; stroke-width=&#x27;5&#x27;/%3E%3Ccircle cx=&#x27;32&#x27; cy=&#x27;32&#x27; r=&#x27;5&#x27; fill=&#x27;%23d9f87e&#x27;/%3E%3C/svg%3E"
     />
   </head>
   <body>
-    <a class="skip-link" href="#world">跳到实验画布</a>
+    <a class="skip-link" href="#world" data-i18n="跳到实验画布">跳到实验画布</a>
     <div id="app">
       <header>
-        <a class="brand" href="./" aria-label="Emergence Lab 首页"
+        <a
+          class="brand"
+          href="./"
+          aria-label="Emergence Lab 首页"
+          data-i18n-aria="Emergence Lab 首页"
           ><span class="brand-mark"></span>EMERGENCE<span class="brand-light"
             >LAB</span
           ></a
-        ><span class="header-note">形态 · 生长 · 涌现</span
+        ><span class="header-note" data-i18n="形态 · 生长 · 涌现"
+          >形态 · 生长 · 涌现</span
+        ><button
+          id="language-toggle"
+          type="button"
+          aria-label="Switch to English"
+        >
+          EN</button
         ><a
           class="source"
           href="https://github.com/wangchuan2003-a11y/emergence-lab"
@@ -33,61 +46,107 @@
       </header>
       <main>
         <section class="intro">
-          <h1>看见生命的<span>纹理。</span></h1>
+          <h1>
+            <span class="i18n-fragment" data-i18n="看见生命的">看见生命的</span
+            ><span data-i18n="纹理。">纹理。</span>
+          </h1>
           <p>
-            从鸟群到珊瑚，从局部规则到复杂形态。<br />亲手播种一个世界，观察它如何生长。
+            <span
+              class="i18n-fragment"
+              data-i18n="从鸟群到珊瑚，从局部规则到复杂形态。"
+            >
+              从鸟群到珊瑚，从局部规则到复杂形态。</span
+            ><br /><span
+              class="i18n-fragment"
+              data-i18n="亲手播种一个世界，观察它如何生长。"
+              >亲手播种一个世界，观察它如何生长。
+            </span>
           </p>
         </section>
-        <section class="lab" aria-label="交互实验室">
+        <section
+          class="lab"
+          aria-label="交互实验室"
+          data-i18n-aria="交互实验室"
+        >
           <div class="stage">
             <canvas
               id="world"
               tabindex="0"
               aria-describedby="keyboard-help"
               aria-label="交互模拟画布；粒子模式移动吸引、按住排斥；生长模式按住播种、Shift 按住擦除。键盘可通过中心扰动与单步按钮操作。"
+              data-i18n-aria="交互模拟画布；粒子模式移动吸引、按住排斥；生长模式按住播种、Shift 按住擦除。键盘可通过中心扰动与单步按钮操作。"
             ></canvas>
             <div class="stage-top">
-              <span class="live"><i></i><span id="state">运行中</span></span
+              <span class="live"
+                ><i></i><span id="state" data-i18n="运行中">运行中</span></span
               ><span id="model-name">PARTICLE SYSTEM</span
               ><span id="fps">— FPS</span>
             </div>
             <div class="stage-caption">
-              <h2 id="scene-title">群体的直觉</h2>
-              <p id="scene-caption">每个个体只看邻居，群体却形成了方向。</p>
+              <h2 id="scene-title" data-i18n="群体的直觉">群体的直觉</h2>
+              <p
+                id="scene-caption"
+                data-i18n="每个个体只看邻居，群体却形成了方向。"
+              >
+                每个个体只看邻居，群体却形成了方向。
+              </p>
             </div>
             <div class="stage-bottom">
-              <span id="pointer-hint">移动吸引 · 按住排斥</span
-              ><button id="stage-pause" aria-label="暂停或继续实验">暂停</button
-              ><button id="pulse">中心扰动</button
-              ><button id="fullscreen">全屏</button>
+              <span id="pointer-hint" data-i18n="移动吸引 · 按住排斥"
+                >移动吸引 · 按住排斥</span
+              ><button
+                id="stage-pause"
+                aria-label="暂停或继续实验"
+                data-i18n-aria="暂停或继续实验"
+                data-i18n="暂停"
+              >
+                暂停</button
+              ><button id="pulse" data-i18n="中心扰动">中心扰动</button
+              ><button id="fullscreen" data-i18n="全屏">全屏</button>
             </div>
           </div>
           <aside>
             <div class="panel-title">
-              <h2>形态实验室</h2>
+              <h2 data-i18n="形态实验室">形态实验室</h2>
               <span>LIVE LAB</span>
             </div>
             <fieldset class="presets">
-              <legend>选择一个世界</legend>
+              <legend data-i18n="选择一个世界">选择一个世界</legend>
               <button data-preset="physarum" aria-pressed="false">
-                黏菌网络 <small>Physarum</small>
+                <span class="i18n-fragment" data-i18n="黏菌网络">
+                  黏菌网络 </span
+                ><small>Physarum</small>
               </button>
               <button data-preset="coral" aria-pressed="false">
-                <span>04</span>珊瑚生长 <small>Coral</small></button
+                <span>04</span
+                ><span class="i18n-fragment" data-i18n="珊瑚生长"
+                  >珊瑚生长 </span
+                ><small>Coral</small></button
               ><button data-preset="cells" aria-pressed="false">
-                <span>05</span>细胞幻象 <small>Mitosis</small>
+                <span>05</span
+                ><span class="i18n-fragment" data-i18n="细胞幻象"
+                  >细胞幻象 </span
+                ><small>Mitosis</small>
               </button>
               <button data-preset="flock" aria-pressed="true">
-                <span>01</span>鸟群 <small>Flocking</small></button
+                <span>01</span
+                ><span class="i18n-fragment" data-i18n="鸟群">鸟群 </span
+                ><small>Flocking</small></button
               ><button data-preset="orbit" aria-pressed="false">
-                <span>02</span>环流 <small>Orbit</small></button
+                <span>02</span
+                ><span class="i18n-fragment" data-i18n="环流">环流 </span
+                ><small>Orbit</small></button
               ><button data-preset="swarm" aria-pressed="false">
-                <span>03</span>流场 <small>Flow field</small>
+                <span>03</span
+                ><span class="i18n-fragment" data-i18n="流场">流场 </span
+                ><small>Flow field</small>
               </button>
             </fieldset>
             <div class="sliders" id="particle-controls">
               <label for="count"
-                >粒子数量 <output id="count-value">600</output></label
+                ><span class="i18n-fragment" data-i18n="粒子数量"
+                  >粒子数量 </span
+                ><output id="count-value">600</output></label
               ><input
                 id="count"
                 type="range"
@@ -96,7 +155,9 @@
                 step="100"
                 value="600"
               /><label for="speed"
-                >运动速度 <output id="speed-value">1.5</output></label
+                ><span class="i18n-fragment" data-i18n="运动速度"
+                  >运动速度 </span
+                ><output id="speed-value">1.5</output></label
               ><input
                 id="speed"
                 type="range"
@@ -105,7 +166,9 @@
                 step="0.1"
                 value="1.5"
               /><label for="cohesion"
-                >聚合倾向 <output id="cohesion-value">0.6</output></label
+                ><span class="i18n-fragment" data-i18n="聚合倾向"
+                  >聚合倾向 </span
+                ><output id="cohesion-value">0.6</output></label
               ><input
                 id="cohesion"
                 type="range"
@@ -114,7 +177,9 @@
                 step="0.1"
                 value="0.6"
               /><label for="separation"
-                >安全距离 <output id="separation-value">1.1</output></label
+                ><span class="i18n-fragment" data-i18n="安全距离"
+                  >安全距离 </span
+                ><output id="separation-value">1.1</output></label
               ><input
                 id="separation"
                 type="range"
@@ -126,7 +191,9 @@
             </div>
             <div class="sliders" id="bio-controls" hidden>
               <label for="feed"
-                >补给率 F <output id="feed-value">0.0545</output></label
+                ><span class="i18n-fragment" data-i18n="补给率 F"
+                  >补给率 F </span
+                ><output id="feed-value">0.0545</output></label
               ><input
                 id="feed"
                 type="range"
@@ -136,7 +203,9 @@
                 value="0.0545"
               />
               <label for="kill"
-                >消耗率 K <output id="kill-value">0.0620</output></label
+                ><span class="i18n-fragment" data-i18n="消耗率 K"
+                  >消耗率 K </span
+                ><output id="kill-value">0.0620</output></label
               ><input
                 id="kill"
                 type="range"
@@ -146,7 +215,9 @@
                 value="0.062"
               />
               <label for="rate"
-                >演化速度 <output id="rate-value">8×</output></label
+                ><span class="i18n-fragment" data-i18n="演化速度"
+                  >演化速度 </span
+                ><output id="rate-value">8×</output></label
               ><input
                 id="rate"
                 type="range"
@@ -156,13 +227,24 @@
                 value="8"
               />
               <fieldset class="brush-tools" id="brush-controls">
-                <legend>画笔</legend>
-                <button type="button" data-brush="seed" aria-pressed="true">
+                <legend data-i18n="画笔">画笔</legend>
+                <button
+                  type="button"
+                  data-brush="seed"
+                  aria-pressed="true"
+                  data-i18n="播种"
+                >
                   播种</button
-                ><button type="button" data-brush="erase" aria-pressed="false">
+                ><button
+                  type="button"
+                  data-brush="erase"
+                  aria-pressed="false"
+                  data-i18n="擦除"
+                >
                   擦除</button
                 ><label for="brush-radius"
-                  >大小 <output id="brush-radius-value">5</output></label
+                  ><span class="i18n-fragment" data-i18n="大小">大小 </span
+                  ><output id="brush-radius-value">5</output></label
                 ><input
                   id="brush-radius"
                   type="range"
@@ -173,13 +255,23 @@
                 />
               </fieldset>
               <p class="model-note">
-                Gray–Scott 化学模式。不是生物细胞。<br />初始状态预生长 240
-                步；参数可能使图案消失。
+                <span
+                  class="i18n-fragment"
+                  data-i18n="Gray–Scott 化学模式。不是生物细胞。"
+                >
+                  Gray–Scott 化学模式。不是生物细胞。</span
+                ><br /><span
+                  class="i18n-fragment"
+                  data-i18n="初始状态预生长 240 步；参数可能使图案消失。"
+                  >初始状态预生长 240 步；参数可能使图案消失。
+                </span>
               </p>
             </div>
             <div class="sliders" id="network-controls" hidden>
               <label for="network-count"
-                >粒子密度 <output id="network-count-value">4000</output></label
+                ><span class="i18n-fragment" data-i18n="粒子密度"
+                  >粒子密度 </span
+                ><output id="network-count-value">4000</output></label
               ><input
                 id="network-count"
                 type="range"
@@ -189,7 +281,9 @@
                 value="4000"
               />
               <label for="sensor-distance"
-                >感知距离 <output id="sensor-distance-value">9</output></label
+                ><span class="i18n-fragment" data-i18n="感知距离"
+                  >感知距离 </span
+                ><output id="sensor-distance-value">9</output></label
               ><input
                 id="sensor-distance"
                 type="range"
@@ -199,7 +293,9 @@
                 value="9"
               />
               <label for="sensor-angle"
-                >感知夹角 <output id="sensor-angle-value">45°</output></label
+                ><span class="i18n-fragment" data-i18n="感知夹角"
+                  >感知夹角 </span
+                ><output id="sensor-angle-value">45°</output></label
               ><input
                 id="sensor-angle"
                 type="range"
@@ -209,7 +305,9 @@
                 value="45"
               />
               <label for="turn-angle"
-                >转向幅度 <output id="turn-angle-value">45°</output></label
+                ><span class="i18n-fragment" data-i18n="转向幅度"
+                  >转向幅度 </span
+                ><output id="turn-angle-value">45°</output></label
               ><input
                 id="turn-angle"
                 type="range"
@@ -219,7 +317,9 @@
                 value="45"
               />
               <label for="retention"
-                >轨迹保留率 <output id="retention-value">0.950</output></label
+                ><span class="i18n-fragment" data-i18n="轨迹保留率"
+                  >轨迹保留率 </span
+                ><output id="retention-value">0.950</output></label
               ><input
                 id="retention"
                 type="range"
@@ -229,50 +329,65 @@
                 value="0.95"
               />
               <label class="toggle-option"
-                ><input
-                  id="show-agents"
-                  type="checkbox"
-                  checked
-                />显示真实粒子位置</label
+                ><input id="show-agents" type="checkbox" checked /><span
+                  class="i18n-fragment"
+                  data-i18n="显示真实粒子位置"
+                  >显示真实粒子位置</span
+                ></label
               >
               <p class="model-note">
-                粒子读取浓度、留下轨迹，轨迹再引导粒子。<br />周期边界的工程模型；不表示真实黏菌或最短路径。
+                <span
+                  class="i18n-fragment"
+                  data-i18n="粒子读取浓度、留下轨迹，轨迹再引导粒子。"
+                >
+                  粒子读取浓度、留下轨迹，轨迹再引导粒子。</span
+                ><br /><span
+                  class="i18n-fragment"
+                  data-i18n="周期边界的工程模型；不表示真实黏菌或最短路径。"
+                  >周期边界的工程模型；不表示真实黏菌或最短路径。
+                </span>
               </p>
             </div>
             <div class="palette-row">
-              <label for="palette">影调</label
+              <label for="palette" data-i18n="影调">影调</label
               ><select id="palette">
-                <option value="lagoon">深海荧光</option>
-                <option value="ember">琥珀熔岩</option>
-                <option value="mono">冷光银盐</option></select
+                <option value="lagoon" data-i18n="深海荧光">深海荧光</option>
+                <option value="ember" data-i18n="琥珀熔岩">琥珀熔岩</option>
+                <option value="mono" data-i18n="冷光银盐">
+                  冷光银盐
+                </option></select
               ><span
-                >步 <output id="step-count" aria-live="off">0</output></span
+                ><span class="i18n-fragment" data-i18n="步">步 </span
+                ><output id="step-count" aria-live="off">0</output></span
               >
             </div>
             <div class="transport">
-              <button id="pause" class="primary">暂停实验</button
-              ><button id="reset">重新开始</button>
+              <button id="pause" class="primary" data-i18n="暂停实验">
+                暂停实验</button
+              ><button id="reset" data-i18n="重新开始">重新开始</button>
             </div>
             <div class="secondary-actions">
-              <button id="step">单步</button
+              <button id="step" data-i18n="单步">单步</button
               ><span class="record-action"
                 ><output id="record-progress" aria-live="off"></output
-                ><button id="record">录制 8 秒</button></span
+                ><button id="record" data-i18n="录制 8 秒">
+                  录制 8 秒
+                </button></span
               >
             </div>
             <div class="secondary-actions">
               <label class="export-size" for="export-width"
                 >PNG
                 <select id="export-width">
-                  <option value="0">屏幕原样</option>
+                  <option value="0" data-i18n="屏幕原样">屏幕原样</option>
                   <option value="1920">1920 px</option>
                   <option value="3840">3840 px</option>
                 </select></label
-              ><button id="save">保存画面 ↗</button
-              ><button id="share">分享参数 ↗</button>
+              ><button id="save" data-i18n="保存画面 ↗">保存画面 ↗</button
+              ><button id="share" data-i18n="分享参数 ↗">分享参数 ↗</button>
             </div>
             <div class="seed-row">
-              <label for="seed">随机种子</label
+              <label for="seed" data-i18n="随机种子">随机种子</label
               ><input
                 id="seed"
                 type="number"
@@ -280,16 +395,26 @@
                 max="999999"
                 step="1"
                 value="42"
-              /><button id="new-seed" aria-label="换一个随机种子">
+              /><button
+                id="new-seed"
+                aria-label="换一个随机种子"
+                data-i18n-aria="换一个随机种子"
+                data-i18n="换一组"
+              >
                 换一组
               </button>
             </div>
             <details class="checkpoint-panel">
-              <summary>保存与恢复实验</summary>
-              <p id="checkpoint-state">保存当前状态，稍后接着演化</p>
+              <summary data-i18n="保存与恢复实验">保存与恢复实验</summary>
+              <p id="checkpoint-state" data-i18n="保存当前状态，稍后接着演化">
+                保存当前状态，稍后接着演化
+              </p>
               <div class="secondary-actions">
-                <button id="checkpoint-save">保存快照</button
-                ><button id="checkpoint-load">打开快照</button>
+                <button id="checkpoint-save" data-i18n="保存快照">
+                  保存快照</button
+                ><button id="checkpoint-load" data-i18n="打开快照">
+                  打开快照
+                </button>
               </div>
               <input
                 id="checkpoint-file"
@@ -297,38 +422,73 @@
                 accept=".json,application/json"
                 hidden
               />
-              <p>
+              <p
+                data-i18n="JSON 文件包含模拟状态与参数，完全在本机读取。导入失败会保留当前实验。"
+              >
                 JSON
                 文件包含模拟状态与参数，完全在本机读取。导入失败会保留当前实验。
               </p>
             </details>
-            <p class="note">
+            <p
+              class="note"
+              data-i18n="高清 PNG 保持模型比例、去除留边；输出像素增加，不提高模拟网格精度。"
+            >
               高清 PNG
               保持模型比例、去除留边；输出像素增加，不提高模拟网格精度。
             </p>
             <p class="note" id="keyboard-help">
-              聚焦画布后：空格暂停，右方向键单步。<br />触屏可在画布绘制，在画布外滚动页面。
+              <span
+                class="i18n-fragment"
+                data-i18n="聚焦画布后：空格暂停，右方向键单步。"
+              >
+                聚焦画布后：空格暂停，右方向键单步。</span
+              ><br /><span
+                class="i18n-fragment"
+                data-i18n="触屏可在画布绘制，在画布外滚动页面。"
+                >触屏可在画布绘制，在画布外滚动页面。
+              </span>
             </p>
             <p class="note">
-              参数链接保存初始条件，不保存当前笔触。<br />所有计算都在你的浏览器中完成。
+              <span
+                class="i18n-fragment"
+                data-i18n="参数链接保存初始条件，不保存当前笔触。"
+              >
+                参数链接保存初始条件，不保存当前笔触。</span
+              ><br /><span
+                class="i18n-fragment"
+                data-i18n="所有计算都在你的浏览器中完成。"
+                >所有计算都在你的浏览器中完成。
+              </span>
             </p>
             <p id="status" role="status" aria-live="polite"></p>
           </aside>
         </section>
         <section class="explanation">
           <div>
-            <h2>简单规则。<br />生长的可能。</h2>
+            <h2>
+              <span class="i18n-fragment" data-i18n="简单规则。"
+                >简单规则。</span
+              ><br /><span class="i18n-fragment" data-i18n="生长的可能。"
+                >生长的可能。</span
+              >
+            </h2>
           </div>
           <div>
-            <h3>两种物质，无限纹理。</h3>
-            <p>
+            <h3 data-i18n="两种物质，无限纹理。">两种物质，无限纹理。</h3>
+            <p
+              data-i18n="反应扩散模式中，A 持续补给，B 被消耗，两者以不同速度扩散。微小扰动会长成斑点、分枝与迷宫。立体明暗只是浓度场的视觉映射。"
+            >
               反应扩散模式中，A 持续补给，B
               被消耗，两者以不同速度扩散。微小扰动会长成斑点、分枝与迷宫。立体明暗只是浓度场的视觉映射。
             </p>
           </div>
           <div>
-            <h3>参考可追溯，结果可探索。</h3>
-            <p>
+            <h3 data-i18n="参考可追溯，结果可探索。">
+              参考可追溯，结果可探索。
+            </h3>
+            <p
+              data-i18n="反应扩散参照 Karl Sims 的 Gray–Scott 教程；鸟群参照 Craig Reynolds 的 Boids。黏菌网络参考趋化研究的局部反馈思路。这里是探索性模型与艺术表达，不用于预测真实生物过程。"
+            >
               反应扩散参照 Karl Sims 的 Gray–Scott 教程；鸟群参照 Craig Reynolds
               的
               Boids。黏菌网络参考趋化研究的局部反馈思路。这里是探索性模型与艺术表达，不用于预测真实生物过程。
@@ -337,16 +497,20 @@
               href="https://www.karlsims.com/rd.html"
               target="_blank"
               rel="noopener"
+              data-i18n="阅读 Karl Sims 的模型说明 ↗"
               >阅读 Karl Sims 的模型说明 ↗</a
             >
           </div>
         </section>
         <footer>
-          <span>EMERGENCE LAB</span><span>一个关于简单与复杂的开源实验。</span
+          <span>EMERGENCE LAB</span
+          ><span data-i18n="一个关于简单与复杂的开源实验。"
+            >一个关于简单与复杂的开源实验。</span
           ><a
             href="https://github.com/wangchuan2003-a11y/emergence-lab"
             target="_blank"
             rel="noopener"
+            data-i18n="探索源代码 ↗"
             >探索源代码 ↗</a
           >
         </footer>
