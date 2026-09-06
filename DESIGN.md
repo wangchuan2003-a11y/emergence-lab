@@ -1,29 +1,25 @@
 # Design
 
-## Visual system
+## Current visual language
 
-An interactive exhibit: warm ivory page, dark simulation stage, restrained sage controls and three particle colors. The live algorithm is the visual centerpiece. Desktop places controls next to the stage; mobile puts them below it.
+A dark interactive exhibit: the live model leads, controls remain explicit, and scientific/model boundaries are readable. The original ivory prototype is historical; current decisions below describe the shipped navy/cyan/sage interface. Earlier changes remain in Git history and docs/iterations.md.
 
-## Tokens
+## Foundations
 
-- Page: #f3f2ea; ink: #202927; stage: #111718.
-- Particles: #d9f87e, #a3dad3, #efb88d.
-- Self-hosted Manrope and JetBrains Mono; Chinese falls back to the platform's CJK sans.
-- Main container: 1600px maximum, 5vw gutters, 6vw on mobile.
-- Breakpoints: 1000px and 720px; simulation aspect ratio is preserved through letterboxing.
+- Page #0b1118, stage #070f14, panel #111d25, pale sage accents #a7e8c9, light text with muted cyan secondary text.
+- Self-hosted Manrope and JetBrains Mono; platform CJK sans fallback. Mono is reserved for measurements and compact technical metadata.
+- 1600px maximum content width, 5vw desktop / 6vw mobile gutters; principal breakpoints 1000px and 720px.
+- Desktop lab: 800px frame, independently scrollable controls, directly accessible stage pause/pulse/fullscreen actions. Mobile stacks stage and controls.
+- Domain-preserving renderer: fit and pointer mapping share the same native coordinate transform. Letterboxing is intentional; high-resolution PNG export removes it.
 
-## Interaction
+## Interaction and presentation
 
-Local controls update the simulation immediately. The active preset uses a tinted fill and aria-pressed. Seeds and shared URLs preserve initial parameters. Motion is user-controlled and initially paused with reduced-motion preference. Semantic buttons, labelled controls and focus rings support keyboard access.
+Controls use semantic buttons, labels, aria-pressed state and visible focus. Only a focused canvas receives simulation shortcuts. Reduced-motion preference starts the model paused. Model previews are actual rendered data, not decorative generated art. Palette and relief lighting change the presentation rather than model evolution.
 
-## Verification
+Recipes appear as a horizontal gallery on mobile and a three-column gallery on desktop. Preparation has a real progress indicator and cancellation. The old experiment remains intact until preparation succeeds. History, imports and recording are explicit states with bounded resources.
 
-Desktop and 390px mobile manually inspected in the browser. Controls, seed and share behavior are also covered by Playwright tests. A bounded final review inspected the source and saved screenshots: `docs/desktop.png` shows the ordinary desktop viewport with an undistorted orbit; `docs/mobile.png` shows the mobile controls at a scrolled position. These images establish visible layout only, not full-page coverage or live interaction. The fullscreen minimum-height fix was confirmed in CSS, without a separate fullscreen device test. This final review did not rerun Playwright or audit its test coverage. These checks cover this release, not every device or assistive technology.
+Language switching preserves the experiment and capture state. Static translations retain their source keys; dynamic status comes from the same dictionary. The offline indicator describes an available copy; the build link identifies the loaded bundle and can differ from the newest repository commit.
 
-## Biological exhibition update (2026-09-06)
+## Verification boundary
 
-The current palette is deep navy (#0b1118) with a near-black stage (#070f14), muted cyan/sage typography and three selectable render palettes. The stage/aside layout is preserved. The reaction field is rendered with directional concentration-gradient lighting, scaled uniformly into the existing canvas. New presets precede the preserved particle presets; controls switch according to the underlying model. This section supersedes the original ivory palette above. Current screenshot: docs/biological-desktop.png.
-
-## Network extension (2026-09-07)
-
-Six selectable modes now occupy a balanced two-column preset grid. On desktop the lab has an 800px frame with an independently scrollable control panel; the canvas retains a directly accessible pause button. Mobile remains vertically stacked. Network rendering can overlay actual agent positions. Snapshot and brush tools keep the existing slate/cyan/sage language.
+Desktop and 390px mobile surfaces have been inspected during implementation. Automated Chromium desktop/mobile and Firefox desktop cases verify the major workflows; this is not a claim of every device or assistive-technology configuration. Current evidence belongs in docs/verification.md, with historical screenshots/iterations clearly labelled.

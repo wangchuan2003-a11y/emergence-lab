@@ -369,6 +369,17 @@ function rememberEdit() {
   editHistory.remember(checkpoint());
   syncHistory();
 }
+function refreshBuildLabel() {
+  const buildLink = $<HTMLAnchorElement>("build-link");
+  buildLink.textContent =
+    __APP_REVISION__ === "local"
+      ? tr("本地构建")
+      : tr("构建 {revision}", { revision: __APP_REVISION__ });
+  buildLink.href =
+    __APP_REVISION__ === "local"
+      ? "https://github.com/wangchuan2003-a11y/emergence-lab"
+      : `https://github.com/wangchuan2003-a11y/emergence-lab/commit/${__APP_REVISION__}`;
+}
 function sync() {
   syncHistory();
   syncPreparation();
@@ -429,6 +440,7 @@ function sync() {
   }
   $<HTMLSelectElement>("palette").value = palette;
   $<HTMLInputElement>("show-agents").checked = showAgents;
+  refreshBuildLabel();
   $("offline-state").textContent = tr(
     offlineReady ? "离线副本已就绪" : "浏览器本地计算",
   );
@@ -943,10 +955,12 @@ registerOffline({
   enabled: !import.meta.env.DEV,
   onReady: () => {
     offlineReady = true;
+    refreshBuildLabel();
     $("offline-state").textContent = tr("离线副本已就绪");
   },
   onError: () => {
     offlineReady = false;
+    refreshBuildLabel();
     $("offline-state").textContent = tr("浏览器本地计算");
   },
 });

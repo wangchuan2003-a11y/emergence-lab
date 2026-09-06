@@ -511,3 +511,18 @@ test("recorded output decodes into real video frames", async ({ page }) => {
   expect(dimensions.width).toBeGreaterThan(0);
   expect(dimensions.height).toBeGreaterThan(0);
 });
+
+test("the footer identifies the compiled revision", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/#lang=en");
+  const raw = (process.env.GITHUB_SHA ?? "").slice(0, 7);
+  const revision = /^[a-f0-9]{7}$/.test(raw) ? raw : "local";
+  await expect(page.locator("#build-link")).toHaveText(
+    revision === "local" ? "Local build" : `Build ${revision}`,
+  );
+  if (revision !== "local")
+    await expect(page.locator("#build-link")).toHaveAttribute(
+      "href",
+      `https://github.com/wangchuan2003-a11y/emergence-lab/commit/${revision}`,
+    );
+});

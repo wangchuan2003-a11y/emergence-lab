@@ -56,4 +56,10 @@ Added a static element-binding contract after it caught a missing recipe-navigat
 
 A final review found that a stroke starting in canvas letterboxing could enter the model without creating an undo checkpoint. History now records at the first actual paint event, once per gesture, including that edge path. A browser regression compares the full restored snapshot against the pre-stroke state.
 
-Added Firefox desktop to the existing Chromium desktop/mobile matrix and a media-decoding test for exported recordings, so video verification goes beyond filename/download creation. This round adds no new simulation mechanisms. Compatibility and deployment results pending.
+Added Firefox desktop to the existing Chromium desktop/mobile matrix and a media-decoding test for exported recordings, so video verification goes beyond filename/download creation. This round adds no new simulation mechanisms. Verified/deployed: a927030, Actions 34051006896, 104 core tests and 57 Chromium/Firefox browser cases passed, including successful video decoding.
+
+## 2026-09-07 · Traceable delivery
+
+The loaded application now exposes its CI commit revision in the footer, with a direct source link. Local previews are labelled as local builds. This identifies the actual bundle, including when an offline copy differs from the latest repository state.
+
+Added a runtime build-label check and failure-only Playwright traces/screenshots retained for seven days. PRODUCT.md and DESIGN.md were reconciled with the current six-mode, bilingual, offline-capable application; historical choices remain in this iteration log and Git history. Verification coverage and its limitations are consolidated in docs/verification.md.

@@ -2,6 +2,10 @@ export type Language = "zh" | "en";
 
 // Keep the Chinese source in data attributes so switching languages is reversible.
 export const translations: Record<string, string> = {
+  本地构建: "Local build",
+  "构建 {revision}": "Build {revision}",
+  "离线副本可能是上次完整缓存的版本。":
+    "The offline copy may be an earlier complete build.",
   场景配方: "Scene recipes",
   从一个图案开始: "Start from a pattern",
   "预览来自真实模型。按标注步数预演后，你可以继续改变它。":

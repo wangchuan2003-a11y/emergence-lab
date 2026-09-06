@@ -2,6 +2,8 @@
 
 **改变局部规则，看形态自己长出来。**
 
+[![Test and deploy](https://github.com/wangchuan2003-a11y/emergence-lab/actions/workflows/pages.yml/badge.svg)](https://github.com/wangchuan2003-a11y/emergence-lab/actions/workflows/pages.yml)
+
 [在线体验](https://wangchuan2003-a11y.github.io/emergence-lab/#preset=coral) · [黏菌网络](https://wangchuan2003-a11y.github.io/emergence-lab/#preset=physarum) · [科学来源](docs/references.md) · [迭代记录](docs/iterations.md)
 
 ![模型数值状态生成的动画预览](docs/emergence-preview.gif)
@@ -46,11 +48,11 @@ npm ci
 npm run dev
 npm test
 npm run build
-npx playwright install chromium
+npx playwright install chromium firefox
 npx playwright test
 ```
 
-GitHub Actions 对每次 main 推送和 PR 执行数值/状态测试、TypeScript 构建及桌面/手机浏览器回归，通过后部署 main 到 GitHub Pages。Fork 后在 Settings → Pages 选择 GitHub Actions。
+GitHub Actions 对每次 main 推送和 PR 执行数值/状态测试、TypeScript 构建及 Chromium 桌面/手机、Firefox 桌面回归，通过后部署 main 到 GitHub Pages。Fork 后在 Settings → Pages 选择 GitHub Actions。
 
 ## 实现要点
 
@@ -110,3 +112,5 @@ Use **EN** in the header or open [the English lab](https://wangchuan2003-a11y.gi
 场景配方中的三张图片来自真实模型数值状态，标注了预演步数。点击后应用分批准备该状态，期间可取消或改变选择；准备完成前不替换原实验，也不强迫恢复暂停的动画。
 
 画笔和中心扰动可撤销/重做，最多保留 8 个状态。撤销会回到编辑之前的完整数值状态并暂停；它不是只从当前画面抹掉一条笔迹。更换参数、影调、场景或导入快照会清空历史。画布聚焦时可用 Ctrl/Cmd+Z、Shift+Z 或 Ctrl/Cmd+Y。
+
+查看 [验证报告与边界](docs/verification.md)。页脚构建编号链接到实际加载版本的提交；离线副本可能比仓库最新版本更早。
