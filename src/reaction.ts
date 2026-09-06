@@ -24,9 +24,20 @@ export class ReactionDiffusion {
   constructor(
     public preset: BioPreset,
     seed: number,
-    public width = 256,
-    public height = 160,
+    public readonly width = 256,
+    public readonly height = 160,
   ) {
+    if (
+      !Number.isInteger(width) ||
+      !Number.isInteger(height) ||
+      width < 1 ||
+      height < 1 ||
+      width > 1024 ||
+      height > 1024
+    )
+      throw new RangeError("Reaction dimensions must be integers in [1, 1024]");
+    if (preset !== "coral" && preset !== "cells")
+      throw new RangeError("Invalid reaction preset");
     const size = width * height;
     this.a = new Float32Array(size).fill(1);
     this.b = new Float32Array(size);
@@ -56,13 +67,20 @@ export class ReactionDiffusion {
       );
   }
   inject(x: number, y: number, erase = false, radius = 5) {
+    if (!Number.isFinite(radius) || radius < 0)
+      throw new RangeError("Brush radius must be finite and nonnegative");
     if (!Number.isFinite(x) || !Number.isFinite(y)) return;
-    for (let oy = -Math.ceil(radius); oy <= radius; oy++)
-      for (let ox = -Math.ceil(radius); ox <= radius; ox++) {
+    const cx = Math.round(x),
+      cy = Math.round(y),
+      minX = Math.max(0, Math.ceil(cx - radius)),
+      maxX = Math.min(this.width - 1, Math.floor(cx + radius)),
+      minY = Math.max(0, Math.ceil(cy - radius)),
+      maxY = Math.min(this.height - 1, Math.floor(cy + radius));
+    for (let py = minY; py <= maxY; py++)
+      for (let px = minX; px <= maxX; px++) {
+        const ox = px - cx,
+          oy = py - cy;
         if (ox * ox + oy * oy > radius * radius) continue;
-        const px = Math.round(x) + ox,
-          py = Math.round(y) + oy;
-        if (px < 0 || py < 0 || px >= this.width || py >= this.height) continue;
         const i = py * this.width + px;
         this.a[i] = erase ? 1 : 0.5;
         this.b[i] = erase ? 0 : 0.8;
@@ -73,6 +91,8 @@ export class ReactionDiffusion {
     kill = reactions[this.preset].kill,
     iterations = 1,
   ) {
+    if (!Number.isInteger(iterations) || iterations < 0 || iterations > 10000)
+      throw new RangeError("Iterations must be an integer in [0, 10000]");
     if (
       !Number.isFinite(feed) ||
       !Number.isFinite(kill) ||

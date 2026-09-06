@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#111718" />
+    <meta name="theme-color" content="#0b1118" />
     <meta
       name="description"
       content="改变简单规则，亲手创造复杂秩序。一个开源、可复现的交互式粒子涌现实验室。"
@@ -15,6 +15,7 @@
     />
   </head>
   <body>
+    <a class="skip-link" href="#world">跳到实验画布</a>
     <div id="app">
       <header>
         <a class="brand" href="./" aria-label="Emergence Lab 首页"
@@ -41,6 +42,8 @@
           <div class="stage">
             <canvas
               id="world"
+              tabindex="0"
+              aria-describedby="keyboard-help"
               aria-label="交互模拟画布；粒子模式移动吸引、按住排斥；生长模式按住播种、Shift 按住擦除。键盘可通过中心扰动与单步按钮操作。"
             ></canvas>
             <div class="stage-top">
@@ -148,6 +151,23 @@
                 step="1"
                 value="8"
               />
+              <fieldset class="brush-tools">
+                <legend>画笔</legend>
+                <button type="button" data-brush="seed" aria-pressed="true">
+                  播种</button
+                ><button type="button" data-brush="erase" aria-pressed="false">
+                  擦除</button
+                ><label for="brush-radius"
+                  >大小 <output id="brush-radius-value">5</output></label
+                ><input
+                  id="brush-radius"
+                  type="range"
+                  min="1"
+                  max="15"
+                  step="1"
+                  value="5"
+                />
+              </fieldset>
               <p class="model-note">
                 Gray–Scott 化学模式。不是生物细胞。<br />初始状态预生长 240
                 步；参数可能使图案消失。
@@ -159,7 +179,9 @@
                 <option value="lagoon">深海荧光</option>
                 <option value="ember">琥珀熔岩</option>
                 <option value="mono">冷光银盐</option></select
-              ><span>步 <output id="step-count">0</output></span>
+              ><span
+                >步 <output id="step-count" aria-live="off">0</output></span
+              >
             </div>
             <div class="transport">
               <button id="pause" class="primary">暂停实验</button
@@ -167,7 +189,10 @@
             </div>
             <div class="secondary-actions">
               <button id="step">单步</button
-              ><button id="record">录制 8 秒</button>
+              ><span class="record-action"
+                ><output id="record-progress" aria-live="off"></output
+                ><button id="record">录制 8 秒</button></span
+              >
             </div>
             <div class="secondary-actions">
               <button id="save">保存画面 ↗</button
@@ -186,6 +211,27 @@
                 换一组
               </button>
             </div>
+            <details class="checkpoint-panel">
+              <summary>保存与恢复实验</summary>
+              <p id="checkpoint-state">保存当前状态，稍后接着演化</p>
+              <div class="secondary-actions">
+                <button id="checkpoint-save">保存快照</button
+                ><button id="checkpoint-load">打开快照</button>
+              </div>
+              <input
+                id="checkpoint-file"
+                type="file"
+                accept=".json,application/json"
+                hidden
+              />
+              <p>
+                JSON
+                文件包含模拟状态与参数，完全在本机读取。导入失败会保留当前实验。
+              </p>
+            </details>
+            <p class="note" id="keyboard-help">
+              聚焦画布后：空格暂停，右方向键单步。<br />触屏可在画布绘制，在画布外滚动页面。
+            </p>
             <p class="note">
               参数链接保存初始条件，不保存当前笔触。<br />所有计算都在你的浏览器中完成。
             </p>

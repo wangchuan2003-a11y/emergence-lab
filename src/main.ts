@@ -1,4 +1,11 @@
 import "./style.css";
+import { createCaptureController } from "./capture";
+import {
+  decodeSnapshot,
+  encodeSnapshot,
+  MAX_SNAPSHOT_BYTES,
+  type Snapshot,
+} from "./snapshot";
 import { Simulation, parseSettings, serialize, type Preset } from "./engine";
 import { ReactionDiffusion, reactions, type BioPreset } from "./reaction";
 const $ = <T extends HTMLElement>(id: string) =>
@@ -23,14 +30,56 @@ let feed = 0.0545,
   bioSpeed = 8,
   palette: "lagoon" | "ember" | "mono" = "lagoon";
 let pointer: { x: number; y: number; repel: boolean } | undefined;
-let recording: MediaRecorder | null = null,
-  recordTimer: ReturnType<typeof setTimeout> | undefined;
+let brushErase = false,
+  brushRadius = 5,
+  lastPaint: { x: number; y: number } | undefined;
+let importedSnapshot = false;
+let pendingResize = false,
+  pendingHash = false;
 const scenes: Record<Preset, [string, string]> = {
   flock: ["群体的直觉", "每个个体只看邻居，群体却形成了方向。"],
   orbit: ["围绕一个未知", "向心力与切向运动，共同维持流动的环。"],
   swarm: ["看不见的河流", "同一片流场，把独立个体编织成纹理。"],
   coral: ["让一片珊瑚生长", "两种虚拟物质，生成持续演变的分枝与迷宫。"],
   cells: ["一个，变成很多个", "斑点生长、拉伸与分裂：化学模式中的细胞幻象。"],
+};
+const capture = createCaptureController(canvas, {
+  onState: (state, secondsLeft) => {
+    const busy = state !== "idle";
+    document
+      .querySelectorAll<HTMLInputElement | HTMLButtonElement>(
+        "[data-preset], #seed, #reset, #new-seed, #count, #checkpoint-load, #fullscreen",
+      )
+      .forEach((control) => (control.disabled = busy));
+    $("record").textContent =
+      state === "recording"
+        ? "停止并保存"
+        : state === "stopping"
+          ? "正在保存…"
+          : "录制 8 秒";
+    $<HTMLButtonElement>("record").disabled = state === "stopping";
+    $("record-progress").textContent =
+      state === "recording" ? `${secondsLeft}s` : "";
+    if (state === "idle") {
+      if (pendingHash) {
+        pendingHash = false;
+        settings = parseSettings(location.hash);
+        readBioHash();
+        reset();
+      }
+      if (pendingResize) {
+        pendingResize = false;
+        resize();
+      }
+    }
+  },
+  onMessage: report,
+  onComplete: download,
+});
+document.querySelector<HTMLAnchorElement>(".skip-link")!.onclick = (event) => {
+  event.preventDefault();
+  canvas.focus();
+  canvas.scrollIntoView({ block: "center" });
 };
 function report(s: string) {
   $("status").textContent = s;
@@ -53,6 +102,10 @@ function readBioHash() {
   palette = color === "ember" || color === "mono" ? color : "lagoon";
 }
 function resize() {
+  if (capture.state !== "idle") {
+    pendingResize = true;
+    return;
+  }
   const r = canvas.getBoundingClientRect(),
     dpr = Math.min(devicePixelRatio, 2);
   canvas.width = Math.round(r.width * dpr);
@@ -115,12 +168,16 @@ function sync() {
   $("pause").textContent = paused ? "继续实验" : "暂停实验";
   $("state").textContent = paused ? "已暂停" : "运行中";
   document.querySelector(".live")?.classList.toggle("paused", paused);
+  canvas.classList.toggle("drawing-enabled", isBio());
   $("particle-controls").hidden = isBio();
   $("bio-controls").hidden = !isBio();
   $("pointer-hint").textContent = isBio()
     ? "按住播种 · Shift 按住擦除"
     : "移动吸引 · 按住排斥";
   $("model-name").textContent = isBio() ? "GRAY–SCOTT" : "PARTICLE SYSTEM";
+  $("checkpoint-state").textContent = importedSnapshot
+    ? "已恢复快照 · 暂停后继续"
+    : "保存当前状态，稍后接着演化";
   for (const [id, v] of [
     ["feed", feed],
     ["kill", kill],
@@ -132,6 +189,7 @@ function sync() {
   $<HTMLSelectElement>("palette").value = palette;
 }
 function reset() {
+  importedSnapshot = false;
   sim = new Simulation(settings);
   bio = isBio()
     ? new ReactionDiffusion(settings.preset as BioPreset, settings.seed)
@@ -190,9 +248,13 @@ $("seed").addEventListener("change", () => {
 });
 $("pulse").onclick = () => {
   if (bio) {
-    bio.inject(128, 80, false, 8);
+    bio.inject(128, 80, brushErase, brushRadius);
     draw();
-    report("已在中心加入反应物；继续运行可观察扩散。");
+    report(
+      brushErase
+        ? "已擦除中心的反应物。"
+        : "已在中心播种；继续运行可观察扩散。",
+    );
   } else {
     pulseUntil = sim.time + 90;
     if (paused) {
@@ -236,67 +298,133 @@ $("save").onclick = () =>
     } else report("导出失败，请重试。");
   });
 $("record").onclick = () => {
-  if (recording) {
-    if (recording.state === "recording") recording.stop();
-    return;
-  }
-  if (typeof MediaRecorder === "undefined" || !canvas.captureStream) {
-    report("此浏览器不支持录制，请使用保存画面。");
-    return;
-  }
-  const mime = [
-    "video/webm;codecs=vp9",
-    "video/webm;codecs=vp8",
-    "video/webm",
-    "video/mp4",
-  ].find((t) => MediaRecorder.isTypeSupported(t));
-  if (!mime) {
-    report("没有可用的视频编码器，请使用保存画面。");
-    return;
-  }
-  let stream: MediaStream | undefined;
-  try {
-    stream = canvas.captureStream(30);
-    const recorder = new MediaRecorder(stream, { mimeType: mime });
-    const chunks: BlobPart[] = [];
-    recording = recorder;
-    recorder.ondataavailable = (e) => {
-      if (e.data.size) chunks.push(e.data);
-    };
-    const cleanup = () => {
-      clearTimeout(recordTimer);
-      stream?.getTracks().forEach((t) => t.stop());
-      recording = null;
-      $("record").textContent = "录制 8 秒";
-    };
-    let failed = false;
-    recorder.onerror = () => {
-      failed = true;
-      cleanup();
-      report("录制失败，请重试或保存 PNG。");
-    };
-    recorder.onstop = () => {
-      cleanup();
-      if (!failed) {
-        download(
-          new Blob(chunks, { type: mime }),
-          `emergence-${settings.preset}.${mime.includes("mp4") ? "mp4" : "webm"}`,
-        );
-        report("录像已导出。");
+  if (capture.state === "recording") capture.stop();
+  else if (capture.state === "idle")
+    capture.start(`emergence-${settings.preset}`);
+};
+function checkpoint(): Snapshot {
+  const common = {
+    format: "emergence-lab" as const,
+    version: 1 as const,
+    settings: { ...settings },
+    palette,
+    time: bio?.time ?? sim.time,
+  };
+  return bio
+    ? {
+        ...common,
+        kind: "reaction",
+        width: 256,
+        height: 160,
+        feed,
+        kill,
+        rate: bioSpeed,
+        a: Array.from(bio.a),
+        b: Array.from(bio.b),
       }
-    };
-    recorder.start();
-    $("record").textContent = "停止并保存";
-    report("正在录制画布（最多 8 秒），可随时停止。");
-    recordTimer = setTimeout(() => {
-      if (recorder.state === "recording") recorder.stop();
-    }, 8000);
-  } catch {
-    stream?.getTracks().forEach((t) => t.stop());
-    recording = null;
-    report("无法开始录制，请使用保存画面。");
+    : {
+        ...common,
+        kind: "particles",
+        pulseRemaining: Math.max(0, pulseUntil - sim.time),
+        x: Array.from(sim.x),
+        y: Array.from(sim.y),
+        vx: Array.from(sim.vx),
+        vy: Array.from(sim.vy),
+      };
+}
+$("checkpoint-save").onclick = () => {
+  try {
+    const text = encodeSnapshot(checkpoint());
+    download(
+      new Blob([text], { type: "application/json" }),
+      `emergence-${settings.preset}-${bio?.time ?? sim.time}.json`,
+    );
+    report("快照已保存，包含当前状态与笔触；不包含屏幕拖尾。");
+  } catch (error) {
+    report(error instanceof Error ? error.message : "保存失败。");
   }
 };
+$("checkpoint-load").onclick = () =>
+  $<HTMLInputElement>("checkpoint-file").click();
+$("checkpoint-file").addEventListener("change", async () => {
+  const input = $<HTMLInputElement>("checkpoint-file"),
+    file = input.files?.[0];
+  input.value = "";
+  if (!file) return;
+  if (file.size > MAX_SNAPSHOT_BYTES) {
+    report("文件超过 3 MB，请选择本实验室导出的快照。");
+    return;
+  }
+  try {
+    const restored = decodeSnapshot(await file.text());
+    // Build a replacement model completely before touching the running state.
+    const nextSim = new Simulation(restored.settings);
+    let nextBio: ReactionDiffusion | null = null;
+    if (restored.kind === "reaction") {
+      nextBio = new ReactionDiffusion(
+        restored.settings.preset as BioPreset,
+        restored.settings.seed,
+      );
+      nextBio.a.set(restored.a);
+      nextBio.b.set(restored.b);
+      nextBio.time = restored.time;
+    } else {
+      nextSim.x.set(restored.x);
+      nextSim.y.set(restored.y);
+      nextSim.vx.set(restored.vx);
+      nextSim.vy.set(restored.vy);
+      nextSim.time = restored.time;
+    }
+    if (capture.state !== "idle")
+      throw new Error("正在录制，请保存录像后再打开快照。");
+    settings = restored.settings;
+    sim = nextSim;
+    bio = nextBio;
+    palette = restored.palette;
+    if (restored.kind === "reaction") {
+      feed = restored.feed;
+      kill = restored.kill;
+      bioSpeed = restored.rate;
+    }
+    pulseUntil =
+      sim.time + (restored.kind === "particles" ? restored.pulseRemaining : 0);
+    pointer = undefined;
+    lastPaint = undefined;
+    paused = true;
+    importedSnapshot = true;
+    const cleanUrl = new URL(location.href);
+    cleanUrl.hash = "";
+    history.replaceState(null, "", cleanUrl);
+    draw(true);
+    sync();
+    report(`已恢复第 ${restored.time} 步并暂停。点击继续实验即可接着演化。`);
+  } catch (error) {
+    report(
+      error instanceof Error ? error.message : "快照读取失败；当前实验未改变。",
+    );
+  }
+});
+for (const button of document.querySelectorAll<HTMLButtonElement>(
+  "[data-brush]",
+))
+  button.onclick = () => {
+    brushErase = button.dataset.brush === "erase";
+    document
+      .querySelectorAll("[data-brush]")
+      .forEach((b) =>
+        b.setAttribute(
+          "aria-pressed",
+          String(
+            (b as HTMLElement).dataset.brush ===
+              (brushErase ? "erase" : "seed"),
+          ),
+        ),
+      );
+  };
+$("brush-radius").addEventListener("input", () => {
+  brushRadius = Number($<HTMLInputElement>("brush-radius").value);
+  $("brush-radius-value").textContent = String(brushRadius);
+});
 $("share").onclick = async () => {
   const url = new URL(location.href);
   const q = new URLSearchParams(serialize(settings));
@@ -316,6 +444,11 @@ $("share").onclick = async () => {
   }
 };
 window.addEventListener("hashchange", () => {
+  if (capture.state !== "idle") {
+    pendingHash = true;
+    capture.stop();
+    return;
+  }
   settings = parseSettings(location.hash);
   readBioHash();
   reset();
@@ -327,26 +460,74 @@ function updatePointer(e: PointerEvent) {
     y: (((e.clientY - r.top) * canvas.height) / r.height - viewY) / viewScale,
     repel: e.buttons > 0,
   };
-  if (bio && e.buttons) {
-    bio.inject(
-      (pointer.x / 1200) * 256,
-      (pointer.y / 760) * 160,
-      e.shiftKey,
-      5,
+  if (
+    bio &&
+    e.buttons &&
+    pointer.x >= 0 &&
+    pointer.x < 1200 &&
+    pointer.y >= 0 &&
+    pointer.y < 760
+  ) {
+    const point = { x: (pointer.x / 1200) * 256, y: (pointer.y / 760) * 160 };
+    const from = lastPaint ?? point,
+      distance = Math.hypot(point.x - from.x, point.y - from.y);
+    const count = Math.min(
+      128,
+      Math.max(1, Math.ceil(distance / Math.max(1, brushRadius * 0.5))),
     );
+    for (let i = 1; i <= count; i++)
+      bio.inject(
+        from.x + ((point.x - from.x) * i) / count,
+        from.y + ((point.y - from.y) * i) / count,
+        brushErase || e.shiftKey,
+        brushRadius,
+      );
+    lastPaint = point;
     draw();
   }
 }
 canvas.addEventListener("pointermove", updatePointer);
-canvas.addEventListener("pointerdown", updatePointer);
+canvas.addEventListener("pointerdown", (e) => {
+  lastPaint = undefined;
+  if (isBio()) canvas.setPointerCapture(e.pointerId);
+  updatePointer(e);
+});
 canvas.addEventListener("pointerup", (e) => {
+  lastPaint = undefined;
+  if (canvas.hasPointerCapture(e.pointerId))
+    canvas.releasePointerCapture(e.pointerId);
   if (e.pointerType === "mouse") updatePointer(e);
   else pointer = undefined;
 });
-canvas.addEventListener("pointerleave", () => (pointer = undefined));
-canvas.addEventListener("pointercancel", () => (pointer = undefined));
-window.addEventListener("pagehide", () => {
-  if (recording?.state === "recording") recording.stop();
+canvas.addEventListener("pointerleave", () => {
+  pointer = undefined;
+  if (!canvas.matches(":active")) lastPaint = undefined;
+});
+canvas.addEventListener("pointercancel", () => {
+  pointer = undefined;
+  lastPaint = undefined;
+});
+document.addEventListener("keydown", (e) => {
+  const target = e.target as HTMLElement;
+  if (
+    target.closest("input,select,textarea,button,summary,a") ||
+    e.ctrlKey ||
+    e.metaKey ||
+    e.altKey
+  )
+    return;
+  if (e.code === "Space") {
+    e.preventDefault();
+    $("pause").click();
+  }
+  if (e.code === "ArrowRight") {
+    e.preventDefault();
+    $("step").click();
+  }
+});
+window.addEventListener("pagehide", (event) => {
+  if (event.persisted) capture.stop();
+  else capture.dispose();
 });
 readBioHash();
 reset();

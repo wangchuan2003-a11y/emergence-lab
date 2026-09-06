@@ -830,3 +830,121 @@ select:focus-visible {
     font-size: 11px;
   }
 }
+.skip-link {
+  position: fixed;
+  z-index: 20;
+  top: 12px;
+  left: 12px;
+  background: #b6f0d4;
+  color: #12281f;
+  padding: 12px 18px;
+  border-radius: 8px;
+  transform: translateY(-160%);
+}
+.skip-link:focus {
+  transform: translateY(0);
+}
+canvas.drawing-enabled {
+  touch-action: none;
+}
+.brush-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 20px;
+}
+.brush-tools legend {
+  margin-bottom: 8px;
+}
+.brush-tools button {
+  border: 1px solid #49675d;
+  background: #172c30;
+  color: #cee5d9;
+  border-radius: 5px;
+  padding: 7px 14px;
+  font-size: 11px;
+}
+.brush-tools button[aria-pressed="true"] {
+  background: #345d50;
+  border-color: #94d4b9;
+}
+.brush-tools label {
+  margin: 0 0 0 auto;
+  font-size: 11px;
+}
+.brush-tools input {
+  flex-basis: 100%;
+}
+.checkpoint-panel {
+  margin-top: 18px;
+  border-top: 1px solid #2c4045;
+  padding-top: 15px;
+  font-size: 11px;
+  color: #b5cfc5;
+}
+.checkpoint-panel summary {
+  cursor: pointer;
+  min-height: 30px;
+}
+.checkpoint-panel p {
+  font-size: 10px;
+  color: #9ab7b0;
+  line-height: 1.7;
+  margin: 8px 0;
+}
+.checkpoint-panel button {
+  min-height: 36px;
+}
+.checkpoint-panel .secondary-actions {
+  margin: 4px 0;
+}
+.stage canvas:focus-visible {
+  outline: 2px solid #b6f0d4;
+  outline-offset: -5px;
+}
+button:disabled,
+input:disabled,
+select:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+aside {
+  overflow-wrap: anywhere;
+}
+.stage-bottom button {
+  min-height: 32px;
+}
+.secondary-actions button {
+  min-height: 30px;
+}
+@media (max-width: 720px) {
+  .brush-tools button {
+    padding: 10px 18px;
+  }
+  .checkpoint-panel summary,
+  .secondary-actions button {
+    min-height: 40px;
+  }
+  .stage-bottom button {
+    min-height: 36px;
+  }
+  .checkpoint-panel p {
+    font-size: 11px;
+  }
+  .note {
+    line-height: 1.85;
+  }
+}
+.record-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.record-action output {
+  font-size: 10px;
+  color: #d9b990;
+}
+.record-action button {
+  white-space: nowrap;
+}

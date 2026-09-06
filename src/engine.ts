@@ -50,6 +50,23 @@ export function serialize(s: Settings) {
     Object.entries(s).map(([k, v]) => [k, String(v)]),
   ).toString();
 }
+function validateSettings(settings: Settings) {
+  if (
+    !Number.isInteger(settings.count) ||
+    settings.count < 1 ||
+    settings.count > 1400 ||
+    !Number.isFinite(settings.speed) ||
+    settings.speed <= 0 ||
+    settings.speed > 3 ||
+    !Number.isFinite(settings.cohesion) ||
+    settings.cohesion < 0 ||
+    settings.cohesion > 2 ||
+    !Number.isFinite(settings.separation) ||
+    settings.separation < 0 ||
+    settings.separation > 2
+  )
+    throw new RangeError("Invalid particle settings");
+}
 export class Simulation {
   x: Float32Array;
   y: Float32Array;
@@ -62,9 +79,21 @@ export class Simulation {
   time = 0;
   constructor(
     public settings: Settings,
-    public width = 1200,
-    public height = 760,
+    public readonly width = 1200,
+    public readonly height = 760,
   ) {
+    validateSettings(settings);
+    if (
+      !Number.isInteger(width) ||
+      !Number.isInteger(height) ||
+      width < 1 ||
+      height < 1 ||
+      width > 16384 ||
+      height > 16384
+    )
+      throw new RangeError(
+        "Particle dimensions must be integers in [1, 16384]",
+      );
     const n = settings.count;
     this.x = new Float32Array(n);
     this.y = new Float32Array(n);
@@ -84,7 +113,10 @@ export class Simulation {
     }
   }
   step(pointer?: { x: number; y: number; repel: boolean }) {
+    validateSettings(this.settings);
     const { count: n, speed, cohesion, separation, preset } = this.settings;
+    if (n !== this.x.length)
+      throw new RangeError("Recreate the simulation to change particle count");
     const radius = 55,
       cols = Math.max(1, Math.floor(this.width / radius)),
       rows = Math.max(1, Math.floor(this.height / radius)),
@@ -94,6 +126,17 @@ export class Simulation {
       this.heads = new Int32Array(cols * rows);
     this.heads.fill(-1);
     for (let i = 0; i < n; i++) {
+      if (
+        !Number.isFinite(this.x[i]) ||
+        !Number.isFinite(this.y[i]) ||
+        !Number.isFinite(this.vx[i]) ||
+        !Number.isFinite(this.vy[i]) ||
+        this.x[i] < 0 ||
+        this.x[i] > this.width ||
+        this.y[i] < 0 ||
+        this.y[i] > this.height
+      )
+        throw new RangeError("Invalid particle state");
       const c =
         Math.min(cols - 1, Math.floor(this.x[i] / cw)) +
         Math.min(rows - 1, Math.floor(this.y[i] / ch)) * cols;
@@ -112,8 +155,9 @@ export class Simulation {
         neighbors = 0;
       const cx = Math.floor(this.x[i] / cw),
         cy = Math.floor(this.y[i] / ch);
-      for (let oy = -1; oy <= 1; oy++)
-        for (let ox = -1; ox <= 1; ox++) {
+      // A wrapped axis with only one or two cells must visit each cell once.
+      for (let oy = -1; oy <= Math.min(1, rows - 2); oy++)
+        for (let ox = -1; ox <= Math.min(1, cols - 2); ox++) {
           const c =
             ((cx + ox + cols) % cols) + ((cy + oy + rows) % rows) * cols;
           for (let j = this.heads[c]; j !== -1; j = this.links[j]) {
@@ -199,6 +243,11 @@ export class Simulation {
       this.vy[i] = this.nextY[i];
       this.x[i] = (this.x[i] + this.vx[i] + this.width) % this.width;
       this.y[i] = (this.y[i] + this.vy[i] + this.height) % this.height;
+      if (this.x[i] < 0) this.x[i] += this.width;
+      if (this.y[i] < 0) this.y[i] += this.height;
+      // Float32 rounding can turn a value just below the edge into the edge.
+      if (this.x[i] === this.width) this.x[i] = 0;
+      if (this.y[i] === this.height) this.y[i] = 0;
     }
     this.time++;
   }
