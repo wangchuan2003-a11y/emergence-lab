@@ -71,3 +71,7 @@ Final in-browser inspection reproduced a mixed-language state message after togg
 ## Final deployed checkpoint
 
 Application revision **02bf7c2** passed [Actions run 34052301686](https://github.com/wangchuan2003-a11y/emergence-lab/actions/runs/34052301686): **104 core tests** and **63 browser cases** across Chromium desktop/mobile and Firefox desktop. The deployed build label, a prepared 1200-step scene, and current desktop/mobile/gallery views were read back and captured. See verification.md for exact evidence and limits. Later documentation-only commits do not change the deployed application revision.
+
+## Dependency closeout
+
+Removed the two unused font package dependencies after checking source, scripts, tests and docs for references. The self-hosted font files and their licenses remain in the repository. Local production output retained the same asset hashes and offline-shell version; all 104 core tests passed after removal. The cleanup is validated again by CI before publication.
