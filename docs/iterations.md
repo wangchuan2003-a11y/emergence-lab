@@ -63,3 +63,7 @@ Added Firefox desktop to the existing Chromium desktop/mobile matrix and a media
 The loaded application now exposes its CI commit revision in the footer, with a direct source link. Local previews are labelled as local builds. This identifies the actual bundle, including when an offline copy differs from the latest repository state.
 
 Added a runtime build-label check and failure-only Playwright traces/screenshots retained for seven days. PRODUCT.md and DESIGN.md were reconciled with the current six-mode, bilingual, offline-capable application; historical choices remain in this iteration log and Git history. Verification coverage and its limitations are consolidated in docs/verification.md.
+
+## 2026-09-07 · Closing language-state fix
+
+Final in-browser inspection reproduced a mixed-language state message after toggling EN: the scene title changed, but the last action message remained Chinese. Messages now retain their source template and captured values, including bilingual recipe names, so the existing message can be retranslated without resetting the model or changing its historical numbers. The single-step control also exposes its actual numerical-step count in its tooltip/accessibility name.

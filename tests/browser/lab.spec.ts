@@ -526,3 +526,27 @@ test("the footer identifies the compiled revision", async ({ page }) => {
       `https://github.com/wangchuan2003-a11y/emergence-lab/commit/${revision}`,
     );
 });
+
+test("existing status messages retranslate while preserving their captured values", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/#preset=coral");
+  await page.locator("#pulse").click();
+  await expect(page.locator("#status")).toContainText("已在中心播种");
+  await page.locator("#language-toggle").click();
+  await expect(page.locator("#status")).not.toHaveText(/[\u3400-\u9fff]/);
+  await expect(page.locator("#step")).toHaveAttribute(
+    "title",
+    "Step: advance by 8, then pause.",
+  );
+  await page.locator("#export-width").selectOption("1920");
+  const pending = page.waitForEvent("download");
+  await page.locator("#save").click();
+  await pending;
+  await expect(page.locator("#status")).toContainText("1920");
+  await page.locator("#language-toggle").click();
+  await expect(page.locator("#status")).toHaveText(
+    "已导出宽 1920 像素的 PNG。",
+  );
+});

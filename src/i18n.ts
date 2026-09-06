@@ -2,6 +2,8 @@ export type Language = "zh" | "en";
 
 // Keep the Chinese source in data attributes so switching languages is reversible.
 export const translations: Record<string, string> = {
+  "单步：推进 {count} 个数值步并暂停。":
+    "Step: advance by {count}, then pause.",
   本地构建: "Local build",
   "构建 {revision}": "Build {revision}",
   "离线副本可能是上次完整缓存的版本。":

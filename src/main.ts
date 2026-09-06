@@ -58,6 +58,9 @@ let brushErase = false,
   brushRadius = 5,
   lastPaint: { x: number; y: number } | undefined;
 let offlineReady = false;
+type MessageValue = string | number | { zh: string; en: string };
+let lastReport:
+  { key: string; values: Record<string, MessageValue> } | undefined;
 let importRequest = 0;
 let preparingRequest: number | null = null,
   preparingRecipe: Recipe | undefined;
@@ -126,6 +129,7 @@ function applyLanguage() {
   document.documentElement.lang = language === "en" ? "en" : "zh-CN";
   applyTranslations(document, language);
   renderRecipes();
+  refreshReport();
   $("language-toggle").textContent = language === "en" ? "中文" : "EN";
   $("language-toggle").setAttribute(
     "aria-label",
@@ -158,8 +162,19 @@ $("language-toggle").onclick = () => {
   history.replaceState(null, "", url);
   applyLanguage();
 };
-function report(s: string) {
-  $("status").textContent = tr(s);
+function refreshReport() {
+  if (!lastReport) {
+    $("status").textContent = "";
+    return;
+  }
+  const values: Record<string, string | number> = {};
+  for (const [key, value] of Object.entries(lastReport.values))
+    values[key] = typeof value === "object" ? value[language] : value;
+  $("status").textContent = translate(lastReport.key, language, values);
+}
+function report(key: string, values: Record<string, MessageValue> = {}) {
+  lastReport = { key, values };
+  refreshReport();
 }
 function isNetwork() {
   return settings.preset === "physarum";
@@ -315,12 +330,10 @@ async function selectRecipe(id: string) {
     preparingRequest = null;
     preparingRecipe = undefined;
     sync();
-    report(
-      tr("已载入 {name}，从第 {step} 步继续。", {
-        name: recipeName(recipe),
-        step: prepared.time,
-      }),
-    );
+    report("已载入 {name}，从第 {step} 步继续。", {
+      name: { zh: recipe.titleZh, en: recipe.titleEn },
+      step: prepared.time,
+    });
     canvas.focus({ preventScroll: true });
     document.querySelector(".stage")!.scrollIntoView({
       block: "start",
@@ -329,7 +342,7 @@ async function selectRecipe(id: string) {
         : "smooth",
     });
   } catch (error) {
-    if (request === importRequest) report(tr("场景准备失败，请重试。"));
+    if (request === importRequest) report("场景准备失败，请重试。");
     console.error(error);
   } finally {
     if (preparingRequest === request) {
@@ -400,6 +413,11 @@ function sync() {
   $("scene-caption").textContent = tr(scenes[settings.preset][1]);
   $("pause").textContent = tr(paused ? "继续实验" : "暂停实验");
   $("stage-pause").textContent = tr(paused ? "继续" : "暂停");
+  const stepHint = tr("单步：推进 {count} 个数值步并暂停。", {
+    count: isBio() ? bioSpeed : 1,
+  });
+  $("step").title = stepHint;
+  $("step").setAttribute("aria-label", stepHint);
   $("state").textContent = tr(
     preparingRequest !== null ? "正在准备" : paused ? "已暂停" : "运行中",
   );
@@ -615,11 +633,9 @@ $("save").onclick = () => {
   output.toBlob((blob) => {
     if (blob) {
       download(blob, filename);
-      report(
-        requestedWidth
-          ? tr("已导出宽 {width} 像素的 PNG。", { width: requestedWidth })
-          : "当前画布已导出 PNG。",
-      );
+      if (requestedWidth)
+        report("已导出宽 {width} 像素的 PNG。", { width: requestedWidth });
+      else report("当前画布已导出 PNG。");
     } else report("导出失败，请重试。");
   });
 };
@@ -779,11 +795,9 @@ $("checkpoint-file").addEventListener("change", async () => {
     history.replaceState(null, "", cleanUrl);
     resize();
     sync();
-    report(
-      tr("已恢复第 {step} 步并暂停。点击继续实验即可接着演化。", {
-        step: restored.time,
-      }),
-    );
+    report("已恢复第 {step} 步并暂停。点击继续实验即可接着演化。", {
+      step: restored.time,
+    });
   } catch (error) {
     if (request !== importRequest) return;
     report(
