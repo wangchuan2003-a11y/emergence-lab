@@ -1,0 +1,75 @@
+# Emergence Lab
+
+**改变简单规则，亲手创造复杂秩序。**
+
+[在线体验](https://wangchuan2003-a11y.github.io/emergence-lab/) · [English](#english) · [算法参考](https://www.red3d.com/cwr/boids/)
+
+![Emergence Lab 实际运行截图](docs/desktop.png)
+
+一个可交互、可复现的粒子群体实验室。没有后端、账号或 API Key。所有模拟在浏览器本地运行。
+
+## 30 秒试玩
+
+1. 打开在线演示，切换 **鸟群 / 环流 / 流场**。
+2. 移动鼠标吸引粒子，按住排斥；键盘和手机可用「中心扰动」。
+3. 调整聚合倾向和安全距离，观察整体结构变化。
+4. 用「分享参数」保存实验起点，用「保存画面」导出 PNG。
+
+## 为什么会形成秩序？
+
+鸟群模式采用 Boids 风格的三个局部规则：聚合、分离与速度对齐。环流加入径向恢复力和切向驱动；流场加入随空间和时间变化的方向场。这是用于探索和视觉表达的模型，不是对真实鸟群或物理系统的精确预测。
+
+- **空间哈希邻域搜索**：只检查附近网格，避免普通场景中对全部粒子两两比较。极端聚集时仍可能退化为平方复杂度。
+- **同步状态更新**：先计算全部新速度，再更新位置，避免按数组顺序原地更新带来的偏差。
+- **固定时间步长**：以 60 Hz 模拟步长运行，慢设备限步以保持交互响应，因此会放慢模拟时间。
+- **可复现种子**：相同设置、相同模拟步数且没有交互时可复现轨迹。分享链接保存初始参数，不保存当前帧或鼠标操作。不同浏览器的浮点实现可能存在细微差别。
+- **环绕边界**：粒子穿过边缘后从另一侧出现，邻域距离同样考虑环绕。
+
+## 本地运行
+
+需要 Node.js 22.12+。
+
+```sh
+npm ci
+npm run dev
+```
+
+```sh
+npm test              # 算法与参数测试
+npm run build         # TypeScript 检查与生产构建
+npx playwright install chromium
+npx playwright test   # 桌面、手机关键交互测试
+```
+
+GitHub Actions 在推送和 PR 时执行测试与构建；main 通过后部署到 GitHub Pages。首次 fork 部署需在仓库 Settings → Pages 中选择 GitHub Actions。
+
+## 项目结构
+
+```text
+src/engine.ts           可独立测试的模拟引擎
+src/main.ts             Canvas 渲染与交互
+src/style.css           响应式界面
+public/                本地字体及其许可证
+ tests/engine.test.mjs   算法、边界与复现测试
+ tests/browser/         Playwright 交互回归
+.github/workflows/      测试与 Pages 部署
+```
+
+## 交互与限制
+
+- 100–1400 个粒子；性能取决于设备、粒子密度与浏览器，界面显示实时 FPS。
+- 尊重 `prefers-reduced-motion`，首次打开默认暂停；可手动开始。
+- 控件支持键盘操作；Canvas 图案本身不是完整的无障碍数据表示。
+- 手机支持控件和中心扰动；鼠标悬停吸引仅适用于有指针的设备。
+- 分享复制失败时，直接复制浏览器地址栏；全屏支持取决于浏览器。
+- 页面本身不进行追踪或上传数据；GitHub Pages 等托管服务可能保留其常规访问日志。
+
+## English
+
+An interactive, deterministic particle laboratory built with **TypeScript + Canvas 2D + Vite**. Explore flocking, orbital flow and animated vector fields, tune local rules, export PNGs and share seeded starting conditions. No backend or API key required. Chinese-first interface; source and engineering notes are available in this repository.
+
+## Credits & license
+
+Boids concept: Craig Reynolds, 1987. The code here is an independent educational implementation. Manrope and JetBrains Mono are self-hosted with their SIL Open Font License files included in `public/`.
+
+Project code: MIT. Built with AI assistance; claims about behavior are covered by the included tests rather than implied production adoption.

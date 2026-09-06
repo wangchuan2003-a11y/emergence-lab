@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#111718" />
+    <meta
+      name="description"
+      content="改变简单规则，亲手创造复杂秩序。一个开源、可复现的交互式粒子涌现实验室。"
+    />
+    <title>Emergence Lab · 涌现实验室</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23111718'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%23d9f87e' stroke-width='5'/%3E%3Ccircle cx='32' cy='32' r='5' fill='%23d9f87e'/%3E%3C/svg%3E"
+    />
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <a class="brand" href="./" aria-label="Emergence Lab 首页"
+          ><span class="brand-mark"></span>EMERGENCE<span class="brand-light"
+            >LAB</span
+          ></a
+        ><span class="header-note">复杂世界，简单规则。</span
+        ><a
+          class="source"
+          href="https://github.com/wangchuan2003-a11y/emergence-lab"
+          target="_blank"
+          rel="noopener"
+          >GitHub ↗</a
+        >
+      </header>
+      <main>
+        <section class="intro">
+          <h1>秩序，自发发生<span>。</span></h1>
+          <p>
+            没有指挥者。只有简单规则。<br />改变一个参数，看整个世界如何回应。
+          </p>
+        </section>
+        <section class="lab" aria-label="交互实验室">
+          <div class="stage">
+            <canvas
+              id="world"
+              aria-label="粒子模拟画布；使用右侧控件切换规则，鼠标移动吸引粒子，按住排斥。键盘可通过中心扰动按钮操作。"
+            ></canvas>
+            <div class="stage-top">
+              <span class="live"><i></i><span id="state">运行中</span></span
+              ><span id="fps">— FPS</span>
+            </div>
+            <div class="stage-caption">
+              <h2 id="scene-title">群体的直觉</h2>
+              <p id="scene-caption">每个个体只看邻居，群体却形成了方向。</p>
+            </div>
+            <div class="stage-bottom">
+              <span>移动吸引 · 按住排斥</span
+              ><button id="pulse">中心扰动</button
+              ><button id="fullscreen">全屏</button>
+            </div>
+          </div>
+          <aside>
+            <div class="panel-title">
+              <h2>创造你的秩序</h2>
+              <span>LIVE LAB</span>
+            </div>
+            <fieldset class="presets">
+              <legend>选择一种规则</legend>
+              <button data-preset="flock" aria-pressed="true">
+                <span>01</span>鸟群 <small>Flocking</small></button
+              ><button data-preset="orbit" aria-pressed="false">
+                <span>02</span>环流 <small>Orbit</small></button
+              ><button data-preset="swarm" aria-pressed="false">
+                <span>03</span>流场 <small>Flow field</small>
+              </button>
+            </fieldset>
+            <div class="sliders">
+              <label for="count"
+                >粒子数量 <output id="count-value">600</output></label
+              ><input
+                id="count"
+                type="range"
+                min="100"
+                max="1400"
+                step="100"
+                value="600"
+              /><label for="speed"
+                >运动速度 <output id="speed-value">1.5</output></label
+              ><input
+                id="speed"
+                type="range"
+                min="0.3"
+                max="3"
+                step="0.1"
+                value="1.5"
+              /><label for="cohesion"
+                >聚合倾向 <output id="cohesion-value">0.6</output></label
+              ><input
+                id="cohesion"
+                type="range"
+                min="0"
+                max="2"
+                step="0.1"
+                value="0.6"
+              /><label for="separation"
+                >安全距离 <output id="separation-value">1.1</output></label
+              ><input
+                id="separation"
+                type="range"
+                min="0"
+                max="2"
+                step="0.1"
+                value="1.1"
+              />
+            </div>
+            <div class="transport">
+              <button id="pause" class="primary">暂停实验</button
+              ><button id="reset">重新开始</button>
+            </div>
+            <div class="secondary-actions">
+              <button id="save">保存画面 ↗</button
+              ><button id="share">分享参数 ↗</button>
+            </div>
+            <div class="seed-row">
+              <label for="seed">随机种子</label
+              ><input
+                id="seed"
+                type="number"
+                min="0"
+                max="999999"
+                step="1"
+                value="42"
+              /><button id="new-seed" aria-label="换一个随机种子">
+                换一组
+              </button>
+            </div>
+            <p class="note">
+              相同参数 + 相同种子 = 相同初始世界。<br />所有计算都在你的浏览器中完成。
+            </p>
+            <p id="status" role="status" aria-live="polite"></p>
+          </aside>
+        </section>
+        <section class="explanation">
+          <div>
+            <span class="section-label">BEHIND THE MOTION</span>
+            <h2>局部规则。<br />全局之美。</h2>
+          </div>
+          <div>
+            <h3>靠近，但别太近。</h3>
+            <p>
+              聚合让粒子靠近邻居，分离让它们保留空间，对齐让它们朝相近方向运动。没有任何一个粒子知道群体的形状。
+            </p>
+          </div>
+          <div>
+            <h3>不是视频，是正在发生。</h3>
+            <p>
+              每一帧都重新计算邻域中的相互作用。试着降低聚合倾向，或提高安全距离，观察整体结构如何变化。
+            </p>
+            <a
+              href="https://www.red3d.com/cwr/boids/"
+              target="_blank"
+              rel="noopener"
+              >了解 Craig Reynolds 的 Boids ↗</a
+            >
+          </div>
+        </section>
+        <footer>
+          <span>EMERGENCE LAB</span><span>一个关于简单与复杂的开源实验。</span
+          ><a
+            href="https://github.com/wangchuan2003-a11y/emergence-lab"
+            target="_blank"
+            rel="noopener"
+            >探索源代码 ↗</a
+          >
+        </footer>
+      </main>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
