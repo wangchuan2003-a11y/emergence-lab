@@ -165,3 +165,16 @@ test("coordinates that round onto an exclusive Float32 boundary are rejected", a
   particle.x[0] = 1199.99999;
   assert.throws(() => encodeSnapshot(particle));
 });
+
+test("palette and preset reject coercible non-string types", () => {
+  const base = particleSnapshot(new Simulation({ ...defaults, count: 100 }));
+  for (const value of [["lagoon"], {}, null, 0, true, "unknown"]) {
+    assert.throws(() => decodeSnapshot(JSON.stringify({ ...base, palette: value })));
+  }
+  assert.throws(() => decodeSnapshot(JSON.stringify({
+    ...base, settings: { ...base.settings, preset: [base.settings.preset] },
+  })));
+  for (const palette of ["lagoon", "ember", "mono"]) {
+    assert.equal(decodeSnapshot(JSON.stringify({ ...base, palette })).palette, palette);
+  }
+});

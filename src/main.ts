@@ -709,6 +709,10 @@ function restoreCheckpoint(restored: Snapshot) {
     nextNetwork.heading.set(restored.heading);
     nextNetwork.field.set(restored.field);
     nextNetwork.time = restored.time;
+    nextNetwork.pixels(
+      new Uint8ClampedArray(nextNetwork.width * nextNetwork.height * 4),
+      restored.palette,
+    );
   } else {
     nextSim.x.set(restored.x);
     nextSim.y.set(restored.y);
