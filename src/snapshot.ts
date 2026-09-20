@@ -89,7 +89,8 @@ export function decodeSnapshot(text: string): Snapshot {
     throw new Error("不支持此快照格式或版本。");
   const s = input.settings;
   if (
-    !presets.includes(String(s.preset)) ||
+    typeof s.preset !== "string" ||
+    !presets.includes(s.preset) ||
     !number(s.count, 100, 1400, true) ||
     !number(s.speed, 0.3, 3) ||
     !number(s.cohesion, 0, 2) ||
@@ -98,7 +99,8 @@ export function decodeSnapshot(text: string): Snapshot {
   )
     throw new Error("快照参数不完整或超出支持范围。");
   if (
-    !["lagoon", "ember", "mono"].includes(String(input.palette)) ||
+    typeof input.palette !== "string" ||
+    !["lagoon", "ember", "mono"].includes(input.palette) ||
     !number(input.time, 0, Number.MAX_SAFE_INTEGER - 10000, true)
   )
     throw new Error("快照影调或时间无效。");
